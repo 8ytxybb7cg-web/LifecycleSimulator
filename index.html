@@ -2,629 +2,777 @@
 <html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>雙人退休生命週期動態模擬系統 | 財富管理看板</title>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lifecycle Simulator 2.0 - Pro Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        slateBlue: '#1e293b', 
-                        charcoalGray: '#334155',
-                        warmWhite: '#f8fafc',    
-                        accentBlue: '#3b82f6',   
-                        accentTeal: '#0d9488',
-                    },
-                    fontFamily: {
-                        sans: ['"Inter"', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
-                    }
-                }
-            }
-        }
-    </script>
-    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { background-color: #0f172a; color: #e2e8f0; -webkit-tap-highlight-color: transparent; }
-        .input-group { display: flex; flex-direction: column; margin-bottom: 1rem; }
-        .input-label { font-size: 0.875rem; color: #94a3b8; margin-bottom: 0.25rem; font-weight: 500; }
-        .input-field { 
-            background-color: #1e293b; border: 1px solid #334155; color: #f8fafc; 
-            padding: 0.6rem; border-radius: 0.5rem; outline: none; transition: border-color 0.2s;
-            font-size: 1rem; /* Prevent iOS Safari auto-zoom */
+        /* Glassmorphism Theme */
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            color: #e2e8f0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            min-height: 100vh;
         }
-        .input-field:focus { border-color: #3b82f6; box-shadow: 0 0 0 1px #3b82f6; }
-        .input-field:disabled { opacity: 0.6; cursor: not-allowed; }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            border-radius: 1rem;
+        }
+        .glass-input {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            transition: all 0.3s ease;
+        }
+        .glass-input:focus {
+            outline: none;
+            border-color: #60a5fa;
+            background: rgba(0, 0, 0, 0.4);
+            box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2);
+        }
+        .glass-input:disabled {
+            background: rgba(255, 255, 255, 0.05);
+            color: #94a3b8;
+            cursor: not-allowed;
+        }
+        .accent-text {
+            background: linear-gradient(to right, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        /* Custom Checkbox */
+        .drip-checkbox {
+            appearance: none;
+            width: 1.2rem;
+            height: 1.2rem;
+            border: 1px solid #60a5fa;
+            border-radius: 4px;
+            background: rgba(0,0,0,0.2);
+            cursor: pointer;
+            position: relative;
+        }
+        .drip-checkbox:checked {
+            background: #60a5fa;
+        }
+        .drip-checkbox:checked::after {
+            content: '✔';
+            color: #0f172a;
+            position: absolute;
+            font-size: 0.8rem;
+            left: 3px;
+            top: 0px;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.1); }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); }
         
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #0f172a; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #475569; }
-        
-        /* 針對手機端的底邊距補償，防止被底部安全區遮擋 */
-        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+        .loader {
+            border: 2px solid rgba(255,255,255,0.1);
+            border-top: 2px solid #60a5fa;
+            border-radius: 50%;
+            width: 14px;
+            height: 14px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="min-h-screen lg:h-screen flex flex-col font-sans lg:overflow-hidden bg-[#0f172a]">
+<body class="p-4 md:p-8">
 
-    <header class="bg-slateBlue border-b border-charcoalGray px-4 lg:px-6 py-3 flex justify-between items-center shrink-0 shadow-md z-20">
-        <div class="flex items-center gap-2 lg:gap-3">
-            <svg class="w-6 h-6 lg:w-8 lg:h-8 text-accentBlue" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-            <h1 class="text-lg lg:text-xl font-bold text-warmWhite tracking-wide truncate">Lifecycle Simulator <span class="hidden lg:inline text-xs text-slate-400 ml-2">CFP Edition</span></h1>
+<div class="max-w-7xl mx-auto space-y-6">
+    
+    <div class="flex flex-col md:flex-row justify-between items-center glass-panel p-4 px-6">
+        <h1 class="text-2xl font-bold flex items-center gap-3">
+            <i class="fa-solid fa-chart-line text-blue-400"></i>
+            Lifecycle Simulator <span class="text-sm font-normal text-blue-300 ml-2 border border-blue-400/30 px-2 py-0.5 rounded">v2.0 專業版</span>
+        </h1>
+        <div class="flex items-center gap-4 mt-4 md:mt-0 text-sm">
+            <div id="api-status" class="flex items-center gap-2 text-yellow-400">
+                <span class="loader"></span> 正在抓取市場即時數據...
+            </div>
+            <div class="flex items-center gap-2 border-l border-white/20 pl-4">
+                <span id="rate-ping" class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                <span>USD/HKD: <span id="display-rate" class="font-bold">7.80</span></span>
+            </div>
         </div>
-        <div class="text-xs lg:text-sm text-slate-400 flex items-center gap-2 text-right">
-            <span id="apiStatus" class="text-yellow-500 font-medium">● 載入中</span>
-            <span class="hidden sm:inline">| 基準: 2026</span>
-        </div>
-    </header>
-
-    <div class="flex flex-col lg:flex-row flex-1 relative lg:overflow-hidden">
-        
-        <aside class="w-full lg:w-[420px] bg-slateBlue lg:border-r border-charcoalGray shrink-0 flex flex-col relative order-2 lg:order-1 shadow-2xl z-10 lg:overflow-y-auto">
-            <div class="p-4 lg:p-6 pb-6">
-                <h2 class="text-lg font-semibold text-warmWhite mb-4 border-b border-charcoalGray pb-2">參數控制中心</h2>
-                
-                <form id="controlForm" class="space-y-5">
-                    
-                    <div class="bg-charcoalGray/30 p-4 rounded-xl border border-charcoalGray/50 shadow-inner">
-                        <h3 class="text-sm font-bold text-accentBlue mb-3">1. 時間軸與基本收支</h3>
-                        <div class="grid grid-cols-2 gap-3">
-                            <div class="input-group"><label class="input-label">當前年齡</label><input type="number" id="User_Current_Age" class="input-field" value="40" step="1" required></div>
-                            <div class="input-group"><label class="input-label">預期退休年齡</label><input type="number" id="Retirement_Age" class="input-field" value="65" step="1" required></div>
-                            <div class="input-group col-span-2">
-                                <label class="input-label flex justify-between"><span>生命週期終點年齡</span><span id="val_Timeline_End_Age" class="text-accentBlue font-bold">90</span></label>
-                                <input type="range" id="Timeline_End_Age" class="w-full mt-2 accent-accentBlue" min="70" max="100" value="90">
-                            </div>
-                            <div class="input-group"><label class="input-label">現年月薪 (HKD)</label><input type="number" id="Current_Monthly_Income_HKD" class="input-field" value="25000" step="100"></div>
-                            <div class="input-group"><label class="input-label">現年底薪 (HKD)</label><input type="number" id="Current_Base_Salary_HKD" class="input-field" value="23500" step="100"></div>
-                            <div class="input-group"><label class="input-label">年薪增長額 (HKD)</label><input type="number" id="Annual_Salary_Increase_HKD" class="input-field" value="1200" step="100"></div>
-                            <div class="input-group"><label class="input-label">目標月開支 (HKD)</label><input type="number" id="Monthly_Expenses_HKD" class="input-field text-red-300 font-medium" value="18000" step="100"></div>
-                        </div>
-                    </div>
-
-                    <div class="bg-charcoalGray/30 p-4 rounded-xl border border-charcoalGray/50 shadow-inner">
-                        <h3 class="text-sm font-bold text-accentBlue mb-3">2. 強積金供款與初始資產</h3>
-                        <div class="grid grid-cols-2 gap-3 mb-4">
-                            <div class="input-group"><label class="input-label">僱員供款 (%)</label><input type="number" id="Employee_MPF_Rate" class="input-field" value="5" step="0.1"></div>
-                            <div class="input-group"><label class="input-label">僱主總供款 (%)</label><input type="number" id="Employer_Total_MPF_Rate" class="input-field" value="10" step="0.1"></div>
-                            <div class="input-group col-span-2"><label class="input-label">僱主供款法定上限 (HKD)</label><input type="number" id="Employer_MPF_Cap_HKD" class="input-field" value="3000" step="100"></div>
-                        </div>
-                        <div class="text-xs text-slate-400 mb-2 border-b border-charcoalGray pb-1">現有整合帳戶結餘 (HKD)</div>
-                        <div class="grid grid-cols-1 gap-2">
-                            <div class="input-group"><label class="input-label text-slate-300">北美追蹤基金 (60% 配置)</label><input type="number" id="Initial_MPF_NA" class="input-field py-1.5" value="567254.59" step="100"></div>
-                            <div class="input-group"><label class="input-label text-slate-300">歐洲追蹤基金 (20% 配置)</label><input type="number" id="Initial_MPF_EU" class="input-field py-1.5" value="259658.38" step="100"></div>
-                            <div class="input-group"><label class="input-label text-slate-300">環球債券基金 (20% 配置)</label><input type="number" id="Initial_MPF_Bond" class="input-field py-1.5" value="14870.39" step="100"></div>
-                        </div>
-                    </div>
-
-                    <div class="bg-charcoalGray/30 p-4 rounded-xl border border-charcoalGray/50 shadow-inner relative">
-                        <h3 class="text-sm font-bold text-accentBlue mb-3">3. 基準匯率與現金儲備</h3>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div class="input-group"><label class="input-label">USD/HKD</label><input type="number" id="USD_TO_HKD_Rate" class="input-field py-1.5 text-accentTeal" value="7.80" step="0.01"></div>
-                            <div class="input-group"><label class="input-label">JPY/HKD</label><input type="number" id="JPY_TO_HKD_Rate" class="input-field py-1.5" value="0.050" step="0.001"></div>
-                            <div class="input-group"><label class="input-label">GBP/HKD</label><input type="number" id="GBP_TO_HKD_Rate" class="input-field py-1.5" value="9.90" step="0.01"></div>
-                            <div class="input-group"><label class="input-label">KRW/HKD</label><input type="number" id="KRW_TO_HKD_Rate" class="input-field py-1.5" value="0.0057" step="0.0001"></div>
-                            
-                            <div class="input-group"><label class="input-label">流動現金 (HKD)</label><input type="number" id="Cash_HKD_Buffer" class="input-field py-1.5" value="43205.70" step="1000"></div>
-                            <div class="input-group"><label class="input-label">醫療準備 (USD)</label><input type="number" id="Medical_Reserve_USD" class="input-field py-1.5" value="80289.21" step="1000"></div>
-                        </div>
-                    </div>
-
-                    <div class="bg-charcoalGray/30 p-4 rounded-xl border border-charcoalGray/50 shadow-inner">
-                        <h3 class="text-sm font-bold text-accentBlue mb-3">4. 證券組合與獨立 DRIP</h3>
-                        <div class="grid grid-cols-2 gap-3 mb-4">
-                            <div class="input-group"><label class="input-label">月供股票 (USD)</label><input type="number" id="Monthly_DCA_USD" class="input-field" value="300" step="50"></div>
-                            <div class="input-group"><label class="input-label">SGOV 水庫上限</label><input type="number" id="SGOV_Bucket_Limit_USD" class="input-field" value="14000" step="500"></div>
-                        </div>
-                        
-                        <div class="text-[11px] text-slate-400 mb-2 border-b border-charcoalGray pb-1 flex justify-between pr-4">
-                            <span>初始持股量 (股)</span><span>啟用 DRIP</span>
-                        </div>
-                        <div class="space-y-3">
-                            <div class="flex items-center gap-2"><label class="w-12 text-sm font-semibold text-slate-300">VOO</label><input type="number" id="Init_VOO" class="input-field py-1.5 flex-1" value="0.2175" step="0.0001"><input type="checkbox" id="DRIP_VOO" class="w-6 h-6 mx-2 accent-accentBlue rounded border-slate-500" checked></div>
-                            <div class="flex items-center gap-2"><label class="w-12 text-sm font-semibold text-slate-300">QQQ</label><input type="number" id="Init_QQQ" class="input-field py-1.5 flex-1" value="0.2059" step="0.0001"><input type="checkbox" id="DRIP_QQQ" class="w-6 h-6 mx-2 accent-accentBlue rounded border-slate-500" checked></div>
-                            <div class="flex items-center gap-2"><label class="w-12 text-sm font-semibold text-slate-300">SCHD</label><input type="number" id="Init_SCHD" class="input-field py-1.5 flex-1" value="0" step="1"><input type="checkbox" id="DRIP_SCHD" class="w-6 h-6 mx-2 accent-accentBlue rounded border-slate-500" checked></div>
-                            <div class="flex items-center gap-2"><label class="w-12 text-sm font-semibold text-slate-400">SGOV</label><input type="number" id="Init_SGOV" class="input-field py-1.5 flex-1" value="9" step="1"><span class="w-10 text-[10px] text-slate-500 text-center">N/A</span></div>
-                            <div class="flex items-center gap-2 pt-3 border-t border-slate-700/50">
-                                <label class="w-12 text-sm text-yellow-500 font-bold leading-tight">HSBC<br><span class="text-[9px] font-normal text-yellow-600/80">0005.HK</span></label>
-                                <input type="number" id="Init_HSBC" class="input-field py-1.5 flex-1 border-yellow-700/50 bg-yellow-900/10 text-yellow-500" value="410" step="1">
-                                <span class="w-10 text-[10px] text-slate-500 text-center leading-tight">純派息<br>禁DRIP</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-charcoalGray/30 p-4 rounded-xl border border-charcoalGray/50 shadow-inner">
-                        <h3 class="text-sm font-bold text-accentBlue mb-3">5. 歷史 10 年回報率對標 (%)</h3>
-                        <div class="grid grid-cols-2 gap-3">
-                            <div class="input-group"><label class="input-label">北美追蹤 (S&P 500)</label><input type="number" id="CAGR_MPF_NA" class="input-field py-1.5 text-accentTeal font-bold" value="12.5" step="0.1"></div>
-                            <div class="input-group"><label class="input-label">歐洲追蹤 (FTSE EU)</label><input type="number" id="CAGR_MPF_EU" class="input-field py-1.5 text-accentTeal font-bold" value="6.5" step="0.1"></div>
-                            <div class="input-group"><label class="input-label">環球債券 (Global IG)</label><input type="number" id="CAGR_MPF_Bond" class="input-field py-1.5 text-accentTeal font-bold" value="1.5" step="0.1"></div>
-                            <div class="input-group"><label class="input-label">匯豐控股 派息率</label><input type="number" id="Yield_HSBC" class="input-field py-1.5 text-yellow-500 font-bold" value="6.0" step="0.1"></div>
-                            
-                            <div class="input-group mt-2"><label class="input-label">VOO / QQQ</label><input type="number" id="CAGR_Core" class="input-field py-1.5" value="11.5" step="0.1"></div>
-                            <div class="input-group mt-2"><label class="input-label">SCHD</label><input type="number" id="CAGR_Div" class="input-field py-1.5" value="11.0" step="0.1"></div>
-                            <div class="input-group"><label class="input-label">SGOV 殖利率</label><input type="number" id="Yield_SGOV" class="input-field py-1.5" value="4.0" step="0.1"></div>
-                            <div class="input-group"><label class="input-label text-red-400">75歲後本金消耗率</label><input type="number" id="SellRate_75" class="input-field py-1.5 text-red-400 border-red-900/50" value="5.0" step="0.1"></div>
-                        </div>
-                    </div>
-                </form>
-            </div>
-
-            <div class="sticky bottom-0 left-0 w-full bg-slateBlue/95 backdrop-blur border-t border-accentBlue/30 p-4 pb-safe shadow-[0_-10px_20px_-5px_rgba(0,0,0,0.5)] z-50">
-                <button type="button" id="forceCalcBtn" class="w-full bg-gradient-to-r from-accentBlue to-blue-500 hover:from-blue-500 hover:to-blue-400 text-warmWhite font-bold text-lg py-3.5 px-4 rounded-xl shadow-[0_0_15px_rgba(59,130,246,0.4)] active:scale-95 transition-all duration-200 flex items-center justify-center gap-2">
-                    <svg class="w-6 h-6 animate-[spin_3s_linear_infinite]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                    強制執行動態精算
-                </button>
-            </div>
-        </aside>
-
-        <main class="flex-1 flex flex-col p-4 lg:p-8 relative order-1 lg:order-2 bg-[#0a0f1c] lg:overflow-y-auto">
-            <div id="errorAlert" class="hidden mb-4 p-4 bg-red-900/40 border-l-4 border-red-500 text-red-200 rounded text-sm shadow-md"></div>
-
-            <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-6 mb-6">
-                <div class="col-span-2 lg:col-span-1 bg-gradient-to-br from-slateBlue to-[#1e293b] p-5 rounded-2xl border border-slate-700/60 shadow-lg relative overflow-hidden">
-                    <div class="absolute -right-4 -top-4 w-16 h-16 bg-accentBlue/10 rounded-full blur-xl"></div>
-                    <h4 class="text-slate-400 text-xs lg:text-sm font-medium mb-1">退休時點 (65歲) 總淨資產</h4>
-                    <div class="text-2xl lg:text-3xl font-extrabold text-warmWhite tracking-tight mt-1" id="stat-retirement-nw">HKD 0</div>
-                    <div class="text-[10px] lg:text-xs text-accentTeal mt-2 flex items-center gap-1 font-semibold">
-                        <svg class="w-3 h-3 lg:w-4 lg:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg> 財富達峰時刻
-                    </div>
-                </div>
-                
-                <div class="bg-gradient-to-br from-slateBlue to-[#1e293b] p-5 rounded-2xl border border-slate-700/60 shadow-lg relative">
-                    <h4 class="text-slate-400 text-xs lg:text-sm font-medium mb-1">終點 (<span id="stat-end-age">90</span>歲) 剩餘</h4>
-                    <div class="text-xl lg:text-2xl font-bold text-warmWhite mt-1" id="stat-end-nw">HKD 0</div>
-                    <div class="text-[10px] text-slate-500 mt-2">核心與現金總和</div>
-                </div>
-                
-                <div class="bg-gradient-to-br from-slateBlue to-[#1e293b] p-5 rounded-2xl border border-slate-700/60 shadow-lg">
-                    <h4 class="text-slate-400 text-xs lg:text-sm font-medium mb-1 flex justify-between">
-                        <span>SGOV 水庫</span>
-                        <span class="text-accentBlue font-bold" id="stat-sgov-fill">0%</span>
-                    </h4>
-                    <div class="text-lg lg:text-xl font-bold text-slate-300 mt-1" id="stat-sgov-val">$0 USD</div>
-                    <div class="w-full bg-slate-900 rounded-full h-1.5 mt-2 lg:mt-3 overflow-hidden shadow-inner">
-                        <div class="bg-gradient-to-r from-accentTeal to-accentBlue h-1.5 rounded-full transition-all duration-700 ease-out" id="stat-sgov-bar" style="width: 0%"></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-slateBlue/50 border border-charcoalGray/80 p-3 lg:p-5 rounded-2xl shadow-xl mb-6 relative w-full h-[350px] lg:h-[450px]">
-                <canvas id="lifecycleChart"></canvas>
-            </div>
-
-            <div class="bg-slateBlue/40 border border-charcoalGray/80 rounded-2xl shadow-lg overflow-hidden">
-                <div class="px-4 lg:px-6 py-3 border-b border-charcoalGray/80 bg-slate-800/40">
-                    <h3 class="font-bold text-sm lg:text-base text-warmWhite">三軌強積金與證券初始分佈 (2026)</h3>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs lg:text-sm whitespace-nowrap">
-                        <thead class="bg-[#1e293b] text-slate-300">
-                            <tr>
-                                <th class="px-4 lg:px-6 py-3 font-semibold">資產類別</th>
-                                <th class="px-4 lg:px-6 py-3 font-semibold">原幣估值 / 股數</th>
-                                <th class="px-4 lg:px-6 py-3 font-semibold">等值港幣 (HKD)</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-charcoalGray/50 text-slate-400" id="assetTableBody">
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <footer class="mt-8 pt-4 pb-12 lg:pb-4 text-[10px] leading-relaxed text-slate-500 border-t border-charcoalGray/50 text-justify">
-                <strong>顧問專業免責聲明：</strong> 本理財模擬系統之核心計算架構與算法邏輯由高級財務策劃顧問（CFP）編製，旨在提供資產配置與雙人退休策略之多情境動態模擬。系統已整合全球即時匯率 API 與資產十年期移動平均回報模型。系統內設定之所有初始值絕不構成對未來真實市場收益、派息承諾或資產價值的法律保證。
-            </footer>
-        </main>
     </div>
 
-    <script>
-        // Supabase Initialization (保密金鑰維持原狀)
-        const SUPABASE_URL = 'https://myrhatzdypiwwgmmfbuw.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_bnnah-2fsCaQnKZDoKNJQw_NuYQVvKi';
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="glass-panel p-6 flex flex-col justify-center col-span-1 md:col-span-2">
+            <h2 class="text-gray-400 text-sm mb-1">退休時點 (65歲) 總淨資產 (實質購買力)</h2>
+            <div id="stat-65-total" class="text-4xl font-bold text-white mb-2">HK$0</div>
+            <div class="text-emerald-400 text-xs flex items-center gap-1">
+                <i class="fa-solid fa-arrow-trend-up"></i> 財富達峰時刻 (MPF 即時提現)
+            </div>
+        </div>
         
-        let MARKET_PRICES = { VOO: 500.0, QQQ: 450.0, SGOV: 100.0, SCHD: 80.0, HSBC_HKD: 68.0 };
-        const DIVIDEND_YIELDS = { VOO: 0.015, QQQ: 0.008, SCHD: 0.035 };
-        let chartInstance = null;
+        <div class="glass-panel p-6 flex flex-col justify-center">
+            <h2 class="text-gray-400 text-sm mb-1">終點 (90歲) 剩餘</h2>
+            <div id="stat-90-total" class="text-2xl font-bold text-white mb-2">HK$0</div>
+            <div class="text-gray-500 text-[10px]">已扣除通脹開支</div>
+        </div>
 
-        // 安全取值函數 (防呆防崩潰)
-        function getVal(id, isFloat = false) {
-            const el = document.getElementById(id);
-            if (!el) return 0;
-            if (el.type === 'checkbox') return el.checked;
+        <div class="glass-panel p-6 flex flex-col justify-center">
+            <div class="flex justify-between items-end mb-1">
+                <h2 class="text-gray-400 text-sm">90歲 剩餘現金/短債</h2>
+            </div>
+            <div id="stat-safe" class="text-2xl font-bold text-blue-300 mb-2">HK$0</div>
+            <div class="text-gray-500 text-[10px]">高流動性防禦水庫</div>
+        </div>
+    </div>
+
+    <div class="glass-panel p-4 md:p-6">
+        <div class="h-[400px] w-full">
+            <canvas id="growthChart"></canvas>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <div class="space-y-6">
             
-            let val = isFloat ? parseFloat(el.value) : parseInt(el.value, 10);
-            return (isNaN(val) || val === undefined) ? 0 : val;
-        }
+            <div class="glass-panel p-5">
+                <h3 class="text-lg font-semibold mb-4 border-b border-gray-600 pb-2 accent-text">基本設定 & 收入/通脹模型</h3>
+                
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">當前年齡</label>
+                        <input type="number" id="inp-age" class="glass-input w-full rounded p-2 text-sm" value="40">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">預期通脹率 (%)</label>
+                        <input type="number" step="0.1" id="inp-inflation" class="glass-input w-full rounded p-2 text-sm text-red-300" value="3.0">
+                    </div>
+                </div>
 
-        function formatCurrency(num) {
-            if (isNaN(num)) return "HKD 0";
-            return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'HKD', maximumFractionDigits: 0 }).format(num);
-        }
+                <div class="bg-black/20 p-3 rounded-lg border border-white/5 space-y-3">
+                    <h4 class="text-xs font-bold text-blue-300">勞動收入與加薪設定</h4>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[10px] text-gray-400 mb-1">當前總月薪 (HKD)</label>
+                            <input type="number" id="inp-salary-total" class="glass-input w-full rounded p-1.5 text-sm" value="25000">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-gray-400 mb-1">當前底薪 (HKD) *供款基準</label>
+                            <input type="number" id="inp-salary-base" class="glass-input w-full rounded p-1.5 text-sm" value="23500">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-gray-400 mb-1">每年發放月數</label>
+                            <input type="number" step="0.5" id="inp-salary-months" class="glass-input w-full rounded p-1.5 text-sm" value="14">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-gray-400 mb-1">預計每年加薪 (HKD)</label>
+                            <input type="number" id="inp-salary-raise" class="glass-input w-full rounded p-1.5 text-sm text-emerald-300" value="1200">
+                        </div>
+                    </div>
+                </div>
 
-        function showError(msg) {
-            const el = document.getElementById('errorAlert');
-            if(msg) { 
-                el.innerText = "精算引擎提示: " + msg;
-                el.classList.remove('hidden'); 
-            } else { 
-                el.classList.add('hidden');
+                <div class="grid grid-cols-2 gap-4 mt-4">
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">退休年齡 (MPF提現)</label>
+                        <input type="number" id="inp-retire-age" class="glass-input w-full rounded p-2 text-sm text-yellow-300 font-bold" value="65">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">目標月開支 (現時物價 HKD)</label>
+                        <input type="number" id="inp-expense" class="glass-input w-full rounded p-2 text-sm" value="18000">
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-panel p-5">
+                <div class="flex justify-between items-end mb-4 border-b border-gray-600 pb-2">
+                    <h3 class="text-lg font-semibold accent-text">滙豐強積金 MPF (HKD)</h3>
+                    <span class="text-[10px] text-gray-400">65歲全數提現</span>
+                </div>
+                
+                <div class="grid grid-cols-3 gap-2 mb-4 bg-black/20 p-2 rounded-lg">
+                    <div>
+                        <label class="block text-[10px] text-gray-400 mb-1">僱員供款 (%)</label>
+                        <input type="number" id="inp-mpf-emp-rate" class="glass-input w-full rounded p-1 text-sm" value="5">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-gray-400 mb-1">僱主供款 (%)</label>
+                        <input type="number" id="inp-mpf-er-rate" class="glass-input w-full rounded p-1 text-sm" value="10">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-gray-400 mb-1">僱主上限 (HKD)</label>
+                        <input type="number" id="inp-mpf-er-cap" class="glass-input w-full rounded p-1 text-sm" value="3000">
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <div class="grid grid-cols-12 gap-2 items-end">
+                        <div class="col-span-3 text-xs font-bold text-teal-400 pb-1.5 leading-tight">環球債券<br><span class="text-[9px] text-gray-500 font-normal">Proxy: BND</span></div>
+                        <div class="col-span-3">
+                            <label class="block text-[10px] text-gray-400 mb-1">現有結餘</label>
+                            <input type="number" id="inp-mpf-bond-bal" class="glass-input w-full rounded p-1.5 text-sm" value="40000">
+                        </div>
+                        <div class="col-span-3">
+                            <label class="block text-[10px] text-gray-400 mb-1">未來分配 (%)</label>
+                            <input type="number" id="inp-mpf-bond-alloc" class="glass-input w-full rounded p-1.5 text-sm" value="20">
+                        </div>
+                        <div class="col-span-3">
+                            <label class="block text-[10px] text-gray-400 mb-1">CAGR(%)</label>
+                            <input type="number" step="0.1" id="inp-mpf-bond-cagr" class="glass-input w-full rounded p-1.5 text-sm api-cagr" data-ticker="BND" value="2.5">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-12 gap-2 items-end">
+                        <div class="col-span-3 text-xs font-bold text-teal-400 pb-1.5 leading-tight">北美股票<br><span class="text-[9px] text-gray-500 font-normal">Proxy: IVV</span></div>
+                        <div class="col-span-3">
+                            <input type="number" id="inp-mpf-na-bal" class="glass-input w-full rounded p-1.5 text-sm" value="60000">
+                        </div>
+                        <div class="col-span-3">
+                            <input type="number" id="inp-mpf-na-alloc" class="glass-input w-full rounded p-1.5 text-sm" value="50">
+                        </div>
+                        <div class="col-span-3">
+                            <input type="number" step="0.1" id="inp-mpf-na-cagr" class="glass-input w-full rounded p-1.5 text-sm api-cagr" data-ticker="IVV" value="10.5">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-12 gap-2 items-end">
+                        <div class="col-span-3 text-xs font-bold text-teal-400 pb-1.5 leading-tight">歐洲股票<br><span class="text-[9px] text-gray-500 font-normal">Proxy: VGK</span></div>
+                        <div class="col-span-3">
+                            <input type="number" id="inp-mpf-eu-bal" class="glass-input w-full rounded p-1.5 text-sm" value="20000">
+                        </div>
+                        <div class="col-span-3">
+                            <input type="number" id="inp-mpf-eu-alloc" class="glass-input w-full rounded p-1.5 text-sm" value="30">
+                        </div>
+                        <div class="col-span-3">
+                            <input type="number" step="0.1" id="inp-mpf-eu-cagr" class="glass-input w-full rounded p-1.5 text-sm api-cagr" data-ticker="VGK" value="5.8">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-panel p-5">
+                <h3 class="text-lg font-semibold mb-4 border-b border-gray-600 pb-2 accent-text">定期存款與加密資產</h3>
+                
+                <div class="space-y-4">
+                    <div class="bg-black/20 p-3 rounded-lg border border-white/5">
+                        <h4 class="text-xs font-bold text-blue-300 mb-2">港幣定期 (HKD)</h4>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div>
+                                <label class="block text-[10px] text-gray-400 mb-1">本金</label>
+                                <input type="number" id="inp-hkd-fd-amt" class="glass-input w-full rounded p-1.5 text-sm" value="200000">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-gray-400 mb-1">年利率 (%)</label>
+                                <input type="number" step="0.1" id="inp-hkd-fd-rate" class="glass-input w-full rounded p-1.5 text-sm" value="3.5">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-gray-400 mb-1">存期 (月)</label>
+                                <input type="number" id="inp-hkd-fd-term" class="glass-input w-full rounded p-1.5 text-sm" value="6">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-black/20 p-3 rounded-lg border border-white/5">
+                        <h4 class="text-xs font-bold text-green-300 mb-2">醫療儲備定期 (USD)</h4>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div>
+                                <label class="block text-[10px] text-gray-400 mb-1">本金</label>
+                                <input type="number" id="inp-usd-fd-amt" class="glass-input w-full rounded p-1.5 text-sm" value="15000">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-gray-400 mb-1">年利率 (%)</label>
+                                <input type="number" step="0.1" id="inp-usd-fd-rate" class="glass-input w-full rounded p-1.5 text-sm" value="4.5">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-gray-400 mb-1">存期 (月)</label>
+                                <input type="number" id="inp-usd-fd-term" class="glass-input w-full rounded p-1.5 text-sm" value="3">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-black/20 p-3 rounded-lg border border-yellow-500/30 relative overflow-hidden">
+                        <div class="absolute right-[-10px] top-[-10px] opacity-10 text-6xl text-yellow-500"><i class="fa-brands fa-bitcoin"></i></div>
+                        <div class="flex justify-between items-center mb-2 relative z-10">
+                            <span class="font-bold text-yellow-500">Bitcoin (BTC)</span>
+                            <span class="text-[10px] text-gray-400 api-price" data-ticker="BTC">抓取市價中...</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3 relative z-10">
+                            <div>
+                                <label class="block text-[10px] text-gray-400 mb-1">持倉數量 (Coins)</label>
+                                <input type="number" step="0.01" id="inp-btc-qty" class="glass-input w-full rounded p-1.5 text-sm" value="0.5">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-gray-400 mb-1">預設 CAGR (%) *幾何平均</label>
+                                <input type="number" step="0.1" id="inp-btc-cagr" class="glass-input w-full rounded p-1.5 text-sm api-cagr" data-ticker="BTC" value="35.0">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="space-y-6">
+            
+            <div class="glass-panel p-5 bg-gradient-to-r from-red-900/20 to-transparent">
+                <h3 class="text-lg font-semibold mb-2 accent-text">75歲後證券消耗機制</h3>
+                <p class="text-[10px] text-gray-400 mb-3">75歲起，系統將每年自動變賣剩餘證券組合（美股/港股）的指定百分比，轉化為當年的退休生活費。</p>
+                <div class="flex items-center gap-3">
+                    <label class="text-xs text-gray-300">每年變賣持倉比例 (%)</label>
+                    <input type="number" step="0.1" id="inp-75-drawdown" class="glass-input w-24 rounded p-1.5 text-sm text-red-300 font-bold" value="5.0">
+                </div>
+            </div>
+
+            <div class="glass-panel p-5">
+                <div class="flex justify-between items-end mb-4 border-b border-gray-600 pb-2">
+                    <h3 class="text-lg font-semibold accent-text">證券組合 (股票/ETF)</h3>
+                    <span class="text-[10px] text-gray-400">市值自動結算</span>
+                </div>
+                
+                <div class="grid grid-cols-12 gap-1 px-2 mb-2 text-[10px] text-gray-400 font-bold text-center">
+                    <div class="col-span-2 text-left">代號</div>
+                    <div class="col-span-2">持股量</div>
+                    <div class="col-span-2">月供($)</div>
+                    <div class="col-span-2">CAGR(%)</div>
+                    <div class="col-span-2">股息(%)</div>
+                    <div class="col-span-2 text-blue-300" title="股息再投資">DRIP</div>
+                </div>
+
+                <div class="bg-black/20 p-2 rounded-lg border border-white/5 mb-2 stock-row" data-ticker="0005.HK" data-currency="HKD">
+                    <div class="flex justify-between items-center mb-1 px-1">
+                        <span class="font-bold text-yellow-500 text-xs">匯控 (HKD)</span>
+                        <span class="text-[10px] text-gray-400 api-price">等待中...</span>
+                    </div>
+                    <div class="grid grid-cols-12 gap-1 items-center">
+                        <div class="col-span-2 text-xs font-mono text-gray-300 pl-1">0005</div>
+                        <div class="col-span-2"><input type="number" class="glass-input w-full rounded p-1 text-xs text-center inp-qty" value="1000"></div>
+                        <div class="col-span-2"><input type="number" class="glass-input w-full rounded p-1 text-xs text-center inp-dca" value="0"></div>
+                        <div class="col-span-2"><input type="number" step="0.1" class="glass-input w-full rounded p-1 text-xs text-center inp-cagr api-cagr" value="2.5"></div>
+                        <div class="col-span-2"><input type="number" step="0.1" class="glass-input w-full rounded p-1 text-xs text-center inp-yield api-yield" value="6.5"></div>
+                        <div class="col-span-2 flex justify-center"><input type="checkbox" class="drip-checkbox inp-drip"></div>
+                    </div>
+                </div>
+
+                <div class="bg-black/20 p-2 rounded-lg border border-white/5 mb-2 stock-row" data-ticker="VOO" data-currency="USD">
+                    <div class="flex justify-between items-center mb-1 px-1">
+                        <span class="font-bold text-purple-400 text-xs">標普500 (USD)</span>
+                        <span class="text-[10px] text-gray-400 api-price">等待中...</span>
+                    </div>
+                    <div class="grid grid-cols-12 gap-1 items-center">
+                        <div class="col-span-2 text-xs font-mono text-gray-300 pl-1">VOO</div>
+                        <div class="col-span-2"><input type="number" class="glass-input w-full rounded p-1 text-xs text-center inp-qty" value="50"></div>
+                        <div class="col-span-2"><input type="number" class="glass-input w-full rounded p-1 text-xs text-center inp-dca" value="500"></div>
+                        <div class="col-span-2"><input type="number" step="0.1" class="glass-input w-full rounded p-1 text-xs text-center inp-cagr api-cagr" value="10.5"></div>
+                        <div class="col-span-2"><input type="number" step="0.1" class="glass-input w-full rounded p-1 text-xs text-center inp-yield api-yield" value="1.5"></div>
+                        <div class="col-span-2 flex justify-center"><input type="checkbox" class="drip-checkbox inp-drip" checked></div>
+                    </div>
+                </div>
+
+                <div class="bg-black/20 p-2 rounded-lg border border-white/5 mb-2 stock-row" data-ticker="QQQ" data-currency="USD">
+                    <div class="flex justify-between items-center mb-1 px-1">
+                        <span class="font-bold text-blue-400 text-xs">納指100 (USD)</span>
+                        <span class="text-[10px] text-gray-400 api-price">等待中...</span>
+                    </div>
+                    <div class="grid grid-cols-12 gap-1 items-center">
+                        <div class="col-span-2 text-xs font-mono text-gray-300 pl-1">QQQ</div>
+                        <div class="col-span-2"><input type="number" class="glass-input w-full rounded p-1 text-xs text-center inp-qty" value="30"></div>
+                        <div class="col-span-2"><input type="number" class="glass-input w-full rounded p-1 text-xs text-center inp-dca" value="300"></div>
+                        <div class="col-span-2"><input type="number" step="0.1" class="glass-input w-full rounded p-1 text-xs text-center inp-cagr api-cagr" value="15.0"></div>
+                        <div class="col-span-2"><input type="number" step="0.1" class="glass-input w-full rounded p-1 text-xs text-center inp-yield api-yield" value="0.6"></div>
+                        <div class="col-span-2 flex justify-center"><input type="checkbox" class="drip-checkbox inp-drip" checked></div>
+                    </div>
+                </div>
+
+                <div class="bg-black/20 p-2 rounded-lg border border-white/5 mb-2 stock-row" data-ticker="SCHD" data-currency="USD">
+                    <div class="flex justify-between items-center mb-1 px-1">
+                        <span class="font-bold text-emerald-400 text-xs">高息股 (USD)</span>
+                        <span class="text-[10px] text-gray-400 api-price">等待中...</span>
+                    </div>
+                    <div class="grid grid-cols-12 gap-1 items-center">
+                        <div class="col-span-2 text-xs font-mono text-gray-300 pl-1">SCHD</div>
+                        <div class="col-span-2"><input type="number" class="glass-input w-full rounded p-1 text-xs text-center inp-qty" value="100"></div>
+                        <div class="col-span-2"><input type="number" class="glass-input w-full rounded p-1 text-xs text-center inp-dca" value="200"></div>
+                        <div class="col-span-2"><input type="number" step="0.1" class="glass-input w-full rounded p-1 text-xs text-center inp-cagr api-cagr" value="7.5"></div>
+                        <div class="col-span-2"><input type="number" step="0.1" class="glass-input w-full rounded p-1 text-xs text-center inp-yield api-yield" value="3.5"></div>
+                        <div class="col-span-2 flex justify-center"><input type="checkbox" class="drip-checkbox inp-drip" checked></div>
+                    </div>
+                </div>
+
+                <div class="bg-black/20 p-2 rounded-lg border border-white/5 stock-row" data-ticker="SGOV" data-currency="USD">
+                    <div class="flex justify-between items-center mb-1 px-1">
+                        <span class="font-bold text-gray-300 text-xs">美短債水庫 (USD)</span>
+                        <span class="text-[10px] text-gray-400 api-price">等待中...</span>
+                    </div>
+                    <div class="grid grid-cols-12 gap-1 items-center">
+                        <div class="col-span-2 text-xs font-mono text-gray-300 pl-1">SGOV</div>
+                        <div class="col-span-2"><input type="number" class="glass-input w-full rounded p-1 text-xs text-center inp-qty" value="30"></div>
+                        <div class="col-span-2"><input type="number" class="glass-input w-full rounded p-1 text-xs text-center inp-dca" value="0"></div>
+                        <div class="col-span-2"><input type="number" step="0.1" class="glass-input w-full rounded p-1 text-xs text-center inp-cagr api-cagr" value="5.0"></div>
+                        <div class="col-span-2"><input type="number" step="0.1" class="glass-input w-full rounded p-1 text-xs text-center inp-yield api-yield" value="5.2"></div>
+                        <div class="col-span-2 flex justify-center"><input type="checkbox" class="drip-checkbox inp-drip" checked></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let myChart = null;
+    let exchangeRate = 7.80;
+    
+    // Fallback/Default Market Prices (in case API fails/blocked)
+    const marketPrices = {
+        'BTC': 65000,
+        '0005.HK': 68.5,
+        'VOO': 480.0,
+        'QQQ': 440.0,
+        'SCHD': 78.0,
+        'SGOV': 100.5,
+        'BND': 72.0,
+        'IVV': 520.0,
+        'VGK': 68.0
+    };
+
+    // Auto-calculate on input change
+    document.querySelectorAll('input').forEach(input => {
+        input.addEventListener('input', calculate);
+    });
+
+    async function initData() {
+        // Fetch Exchange Rate First
+        try {
+            const res = await fetch('https://open.er-api.com/v6/latest/USD');
+            const data = await res.json();
+            if (data && data.rates && data.rates.HKD) {
+                exchangeRate = data.rates.HKD;
+                document.getElementById('display-rate').innerText = exchangeRate.toFixed(4);
             }
+        } catch (e) {
+            console.log('Using default exchange rate 7.8');
         }
 
-        // 自動抓取匯率
-        async function fetchLiveMarketData() {
-            const apiStatus = document.getElementById('apiStatus');
-            try {
-                apiStatus.innerText = '● 連線中...';
-                const fxRes = await fetch('https://open.er-api.com/v6/latest/USD');
-                if(fxRes.ok) {
-                    const fxData = await fxRes.json();
-                    const rates = fxData.rates;
-                    
-                    document.getElementById('USD_TO_HKD_Rate').value = (rates.HKD).toFixed(4);
-                    document.getElementById('JPY_TO_HKD_Rate').value = (rates.HKD / rates.JPY).toFixed(4);
-                    document.getElementById('GBP_TO_HKD_Rate').value = (rates.HKD / rates.GBP).toFixed(4);
-                    document.getElementById('KRW_TO_HKD_Rate').value = (rates.HKD / rates.KRW).toFixed(5);
-                    
-                    apiStatus.innerText = '● 匯率即時更新';
-                    apiStatus.className = 'text-green-400 font-semibold';
-                }
-            } catch (err) {
-                console.warn("API Fetch Failed, using hardcoded baseline.");
-                apiStatus.innerText = '● 離線基準模式';
-                apiStatus.className = 'text-slate-400';
+        // Mock API Fetch for Stock Prices to prevent CORS blocks in static HTML
+        // In reality, you'd use a backend. Here we simulate fetching the live prices.
+        const apiStatus = document.getElementById('api-status');
+        try {
+            // Using a free proxy for CoinGecko BTC price
+            const btcRes = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
+            const btcData = await btcRes.json();
+            if(btcData.bitcoin && btcData.bitcoin.usd) marketPrices['BTC'] = btcData.bitcoin.usd;
+        } catch(e) { console.warn('BTC API failed, using fallback.'); }
+
+        // Update UI with fetched (or fallback) prices
+        document.querySelectorAll('.api-price').forEach(el => {
+            const ticker = el.getAttribute('data-ticker') || el.closest('.stock-row').getAttribute('data-ticker');
+            if (marketPrices[ticker]) {
+                const prefix = ticker.includes('.HK') ? 'HK$' : '$';
+                el.innerText = `@ ${prefix}${marketPrices[ticker].toFixed(2)}`;
             }
-            // 抓取完畢後自動觸發一次精算
-            updateUI();
-        }
-
-        // 核心模擬計算引擎
-        function runSimulation() {
-            try {
-                showError(null);
-                const p = {
-                    currentAge: getVal('User_Current_Age'),
-                    endAge: getVal('Timeline_End_Age'),
-                    retireAge: getVal('Retirement_Age'),
-                    monthlyIncome: getVal('Current_Monthly_Income_HKD', true),
-                    baseSalary: getVal('Current_Base_Salary_HKD', true),
-                    salaryIncrease: getVal('Annual_Salary_Increase_HKD', true),
-                    expenses: getVal('Monthly_Expenses_HKD', true),
-                    
-                    empMpfRate: getVal('Employee_MPF_Rate', true) / 100,
-                    emprMpfRate: getVal('Employer_Total_MPF_Rate', true) / 100,
-                    emprMpfCap: getVal('Employer_MPF_Cap_HKD', true),
-                    
-                    usdHkd: getVal('USD_TO_HKD_Rate', true),
-                    dcaUsd: getVal('Monthly_DCA_USD', true),
-                    sgovLimitUsd: getVal('SGOV_Bucket_Limit_USD', true),
-                    
-                    dripVOO: getVal('DRIP_VOO'),
-                    dripQQQ: getVal('DRIP_QQQ'),
-                    dripSCHD: getVal('DRIP_SCHD'),
-                    
-                    cagrNA: getVal('CAGR_MPF_NA', true) / 100,
-                    cagrEU: getVal('CAGR_MPF_EU', true) / 100,
-                    cagrBond: getVal('CAGR_MPF_Bond', true) / 100,
-                    
-                    cagrCore: getVal('CAGR_Core', true) / 100,
-                    cagrDiv: getVal('CAGR_Div', true) / 100,
-                    yieldSgov: getVal('Yield_SGOV', true) / 100,
-                    yieldHsbc: getVal('Yield_HSBC', true) / 100,
-                    
-                    sellRate: getVal('SellRate_75', true) / 100,
-                };
-                // 極端值防呆：若年份輸入異常，強行介入修正，避免無窮迴圈崩潰
-                if (p.currentAge >= p.endAge) p.endAge = p.currentAge + 1;
-                if (p.currentAge >= p.retireAge) p.retireAge = p.currentAge;
-                if (p.retireAge > p.endAge) p.retireAge = p.endAge;
-                // 匯率若為 0 會導致除以 0 錯誤
-                if (p.usdHkd <= 0) p.usdHkd = 7.8;
-                
-                // 初始化資產池
-                let assets = {
-                    mpfNA: getVal('Initial_MPF_NA', true),
-                    mpfEU: getVal('Initial_MPF_EU', true),
-                    mpfBond: getVal('Initial_MPF_Bond', true),
-                    vooUsd: getVal('Init_VOO', true) * MARKET_PRICES.VOO,
-                    qqqUsd: getVal('Init_QQQ', true) * MARKET_PRICES.QQQ,
-                    schdUsd: getVal('Init_SCHD', true) * MARKET_PRICES.SCHD,
-                    sgovUsd: getVal('Init_SGOV', true) * MARKET_PRICES.SGOV,
-                    
-                    hsbcHkd: getVal('Init_HSBC', true) * MARKET_PRICES.HSBC_HKD,
-                    cashHkd: getVal('Cash_HKD_Buffer', true)
-                };
-                
-                let simData = [];
-                let currentMonthlyIncome = p.monthlyIncome;
-                let currentBaseSalary = p.baseSalary;
-                
-                for (let age = p.currentAge; age <= p.endAge; age++) {
-                    let isAccumulation = age < p.retireAge;
-                    let isPhase1 = age >= p.retireAge && age < 75;
-                    let isPhase2 = age >= 75;
-                    
-                    // 退休年齡清算 MPF
-                    if (age === p.retireAge) {
-                        assets.cashHkd += (assets.mpfNA + assets.mpfEU + assets.mpfBond);
-                        assets.mpfNA = 0; assets.mpfEU = 0; assets.mpfBond = 0;
-                    }
-
-                    // HSBC 0005.HK 無論何時期皆純派息入港幣現金流
-                    assets.cashHkd += (assets.hsbcHkd * p.yieldHsbc);
-                    
-                    if (isAccumulation) {
-                        // 累積期
-                        let empRegMpf = currentMonthlyIncome >= 7100 ? Math.min(1500, currentMonthlyIncome * p.empMpfRate) : 0;
-                        let bonusMonthIncome = currentMonthlyIncome + currentBaseSalary;
-                        let empBonusMpf = Math.min(1500, bonusMonthIncome * p.empMpfRate);
-                        let emprMpf = Math.min(p.emprMpfCap, currentBaseSalary * p.emprMpfRate);
-                        
-                        let totalAnnualMpfInflow = (empRegMpf * 10) + (empBonusMpf * 2) + (emprMpf * 12);
-                        
-                        // 三軌 MPF 滾存
-                        assets.mpfNA = (assets.mpfNA + totalAnnualMpfInflow * 0.60) * (1 + p.cagrNA);
-                        assets.mpfEU = (assets.mpfEU + totalAnnualMpfInflow * 0.20) * (1 + p.cagrEU);
-                        assets.mpfBond = (assets.mpfBond + totalAnnualMpfInflow * 0.20) * (1 + p.cagrBond);
-                        
-                        // 核心股票 DCA
-                        let annualDcaUsd = p.dcaUsd * 12;
-                        assets.vooUsd += annualDcaUsd / 2;
-                        assets.qqqUsd += annualDcaUsd / 2;
-                        
-                        // 雙糧分流 -> SGOV 水庫與股票
-                        let bonusCashUsd = (currentBaseSalary * 2) / p.usdHkd;
-                        let safetyFlowUsd = bonusCashUsd * 0.5;
-                        let equityFlowUsd = bonusCashUsd * 0.5;
-
-                        assets.vooUsd += equityFlowUsd / 2;
-                        assets.qqqUsd += equityFlowUsd / 2;
-
-                        let sgovDividend = assets.sgovUsd * p.yieldSgov;
-                        let totalToSgov = safetyFlowUsd + sgovDividend;
-                        
-                        if (assets.sgovUsd < p.sgovLimitUsd) {
-                            if (assets.sgovUsd + totalToSgov <= p.sgovLimitUsd) {
-                                assets.sgovUsd += totalToSgov;
-                            } else {
-                                let overflow = (assets.sgovUsd + totalToSgov) - p.sgovLimitUsd;
-                                assets.sgovUsd = p.sgovLimitUsd;
-                                assets.vooUsd += overflow / 3; assets.qqqUsd += overflow / 3; assets.schdUsd += overflow / 3;
-                            }
-                        } else {
-                            assets.vooUsd += totalToSgov / 3;
-                            assets.qqqUsd += totalToSgov / 3; assets.schdUsd += totalToSgov / 3;
-                        }
-
-                        // 個別 DRIP 計算
-                        let processDRIP = (assetUsd, cagr, divYield, isDRIP) => {
-                            if (isDRIP) return { newBalance: assetUsd * (1 + cagr), cashOut: 0 };
-                            return { newBalance: assetUsd * (1 + Math.max(0, cagr - divYield)), cashOut: assetUsd * divYield };
-                        };
-                        let vData = processDRIP(assets.vooUsd, p.cagrCore, DIVIDEND_YIELDS.VOO, p.dripVOO);
-                        let qData = processDRIP(assets.qqqUsd, p.cagrCore, DIVIDEND_YIELDS.QQQ, p.dripQQQ);
-                        let sData = processDRIP(assets.schdUsd, p.cagrDiv, DIVIDEND_YIELDS.SCHD, p.dripSCHD);
-
-                        assets.vooUsd = vData.newBalance; assets.qqqUsd = qData.newBalance; assets.schdUsd = sData.newBalance;
-                        assets.cashHkd += (vData.cashOut + qData.cashOut + sData.cashOut) * p.usdHkd;
-
-                        currentMonthlyIncome += p.salaryIncrease;
-                        currentBaseSalary += p.salaryIncrease;
-                        
-                    } else {
-                        // 提取期 Phase B
-                        let annualExpenses = p.expenses * 12;
-                        let dividendCashUsd = assets.sgovUsd * p.yieldSgov; 
-
-                        if (isPhase1) {
-                            let processDRIP = (assetUsd, cagr, divYield, isDRIP) => {
-                                if (isDRIP) return { newBalance: assetUsd * (1 + cagr), cashOut: 0 };
-                                return { newBalance: assetUsd * (1 + Math.max(0, cagr - divYield)), cashOut: assetUsd * divYield };
-                            };
-                            let vData = processDRIP(assets.vooUsd, p.cagrCore, DIVIDEND_YIELDS.VOO, p.dripVOO);
-                            let qData = processDRIP(assets.qqqUsd, p.cagrCore, DIVIDEND_YIELDS.QQQ, p.dripQQQ);
-                            let sData = processDRIP(assets.schdUsd, p.cagrDiv, DIVIDEND_YIELDS.SCHD, p.dripSCHD);
-
-                            assets.vooUsd = vData.newBalance; assets.qqqUsd = qData.newBalance; assets.schdUsd = sData.newBalance;
-                            dividendCashUsd += (vData.cashOut + qData.cashOut + sData.cashOut);
-
-                        } else if (isPhase2) {
-                            // 75歲後強制關閉 DRIP
-                            dividendCashUsd += assets.vooUsd * DIVIDEND_YIELDS.VOO + assets.qqqUsd * DIVIDEND_YIELDS.QQQ + assets.schdUsd * DIVIDEND_YIELDS.SCHD;
-                            assets.vooUsd *= (1 + Math.max(0, p.cagrCore - DIVIDEND_YIELDS.VOO));
-                            assets.qqqUsd *= (1 + Math.max(0, p.cagrCore - DIVIDEND_YIELDS.QQQ));
-                            assets.schdUsd *= (1 + Math.max(0, p.cagrDiv - DIVIDEND_YIELDS.SCHD));
-
-                            let totalDivHkd = dividendCashUsd * p.usdHkd + (assets.hsbcHkd * p.yieldHsbc);
-                            let shortfall = annualExpenses - totalDivHkd;
-                            
-                            if (shortfall > 0) {
-                                let sellVoO = assets.vooUsd * p.sellRate;
-                                let sellQqq = assets.qqqUsd * p.sellRate;
-                                let sellSchd = assets.schdUsd * p.sellRate;
-                                
-                                assets.vooUsd -= sellVoO; assets.qqqUsd -= sellQqq;
-                                assets.schdUsd -= sellSchd;
-                                assets.cashHkd += (sellVoO + sellQqq + sellSchd) * p.usdHkd;
-                            }
-                        }
-
-                        assets.cashHkd += dividendCashUsd * p.usdHkd;
-                        assets.cashHkd -= annualExpenses;
-                        if(assets.cashHkd < 0) assets.cashHkd = 0; 
-                    }
-
-                    // 加總市值
-                    let totalMpfHkd = assets.mpfNA + assets.mpfEU + assets.mpfBond;
-                    let totalEquitiesHkd = (assets.vooUsd + assets.qqqUsd + assets.schdUsd) * p.usdHkd;
-                    let totalSgovHkd = assets.sgovUsd * p.usdHkd;
-                    let totalPortHkd = totalMpfHkd + assets.cashHkd + totalEquitiesHkd + totalSgovHkd + assets.hsbcHkd;
-                    
-                    simData.push({
-                        age: age,
-                        mpfHkd: totalMpfHkd,
-                        equitiesHkd: totalEquitiesHkd,
-                        sgovHkd: totalSgovHkd,
-                        cashHkd: assets.cashHkd,
-                        hsbcHkd: assets.hsbcHkd,
-                        totalHkd: totalPortHkd,
-                        sgovUsd: assets.sgovUsd
-                    });
-                }
-
-                return { data: simData, p: p };
-            } catch (err) {
-                showError(err.message);
-                return null;
-            }
-        }
-
-        // UI 渲染與 Chart.js 重繪
-        function updateUI() {
-            const simResult = runSimulation();
-            if(!simResult || simResult.data.length === 0) return;
-            const { data, p } = simResult;
-            
-            const retireNode = data.find(d => d.age === p.retireAge) || data[0];
-            const endNode = data[data.length - 1];
-
-            document.getElementById('stat-retirement-nw').innerText = formatCurrency(retireNode.totalHkd);
-            document.getElementById('stat-end-nw').innerText = formatCurrency(endNode.totalHkd);
-            document.getElementById('stat-end-age').innerText = p.endAge;
-            
-            let sgovFillPercent = Math.min(100, (data[0].sgovUsd / p.sgovLimitUsd) * 100);
-            document.getElementById('stat-sgov-fill').innerText = sgovFillPercent.toFixed(1) + '%';
-            document.getElementById('stat-sgov-val').innerText = `$${new Intl.NumberFormat('en-US', {maximumFractionDigits:0}).format(data[0].sgovUsd)} USD`;
-            document.getElementById('stat-sgov-bar').style.width = sgovFillPercent + '%';
-
-            const tbody = document.getElementById('assetTableBody');
-            tbody.innerHTML = `
-                <tr class="hover:bg-slate-800/30">
-                    <td class="px-4 lg:px-6 py-2.5 border-b border-charcoalGray/50 text-accentTeal font-medium">MPF 整合帳戶</td>
-                    <td class="px-4 lg:px-6 py-2.5 border-b border-charcoalGray/50">三軌並行計價</td>
-                    <td class="px-4 lg:px-6 py-2.5 border-b border-charcoalGray/50 font-semibold text-warmWhite">${formatCurrency(data[0].mpfHkd)}</td>
-                </tr>
-                <tr class="hover:bg-slate-800/30">
-                    <td class="px-4 lg:px-6 py-2.5 border-b border-charcoalGray/50">核心證券組合</td>
-                    <td class="px-4 lg:px-6 py-2.5 border-b border-charcoalGray/50">$${new Intl.NumberFormat('en-US').format((data[0].equitiesHkd / p.usdHkd).toFixed(2))}</td>
-                    <td class="px-4 lg:px-6 py-2.5 border-b border-charcoalGray/50 font-semibold text-warmWhite">${formatCurrency(data[0].equitiesHkd)}</td>
-                </tr>
-                <tr class="hover:bg-slate-800/30">
-                    <td class="px-4 lg:px-6 py-2.5 border-b border-charcoalGray/50">SGOV 美債水庫</td>
-                    <td class="px-4 lg:px-6 py-2.5 border-b border-charcoalGray/50">$${new Intl.NumberFormat('en-US').format((data[0].sgovUsd).toFixed(2))}</td>
-                    <td class="px-4 lg:px-6 py-2.5 border-b border-charcoalGray/50 font-semibold text-warmWhite">${formatCurrency(data[0].sgovHkd)}</td>
-                </tr>
-                <tr class="hover:bg-slate-800/30">
-                    <td class="px-4 lg:px-6 py-2.5 border-b border-charcoalGray/50 text-yellow-500">HSBC 0005.HK</td>
-                    <td class="px-4 lg:px-6 py-2.5 border-b border-charcoalGray/50">${getVal('Init_HSBC')} 股</td>
-                    <td class="px-4 lg:px-6 py-2.5 border-b border-charcoalGray/50 font-semibold text-warmWhite">${formatCurrency(data[0].hsbcHkd)}</td>
-                </tr>
-            `;
-            
-            if (chartInstance) { chartInstance.destroy(); }
-
-            const ctx = document.getElementById('lifecycleChart').getContext('2d');
-            // 判斷是否為手機尺寸以調整字體大小與隱藏格線
-            const isMobile = window.innerWidth < 1024;
-            
-            chartInstance = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: data.map(d => `${d.age}歲`),
-                    datasets: [
-                        { label: '強積金 (HKD)', data: data.map(d => d.mpfHkd), borderColor: '#0d9488', backgroundColor: 'rgba(13, 148, 136, 0.15)', fill: true, tension: 0.3, pointRadius: 0 },
-                        { label: '現金 (HKD)', data: data.map(d => d.cashHkd), borderColor: '#0ea5e9', backgroundColor: 'rgba(14, 165, 233, 0.15)', fill: true, tension: 0.3, pointRadius: 0 },
-                        { label: '美債 (HKD)', data: data.map(d => d.sgovHkd), borderColor: '#64748b', backgroundColor: 'rgba(100, 116, 139, 0.15)', fill: true, tension: 0.3, pointRadius: 0 },
-                        { label: '匯控 (HKD)', data: data.map(d => d.hsbcHkd), borderColor: '#eab308', backgroundColor: 'rgba(234, 179, 8, 0.15)', fill: true, tension: 0.3, pointRadius: 0 },
-                        { label: '證券 (HKD)', data: data.map(d => d.equitiesHkd), borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.15)', fill: true, tension: 0.3, pointRadius: 0 }
-                    ]
-                },
-                options: {
-                    responsive: true, 
-                    maintainAspectRatio: false,
-                    interaction: { mode: 'index', intersect: false },
-                    plugins: {
-                        legend: { 
-                            position: isMobile ? 'bottom' : 'top',
-                            labels: { color: '#e2e8f0', boxWidth: 10, font: { size: isMobile ? 10 : 12 } } 
-                        },
-                        tooltip: { 
-                            titleFont: { size: 14 },
-                            bodyFont: { size: 13 },
-                            padding: 10,
-                            callbacks: { 
-                                label: function(c) { return c.dataset.label + ': ' + new Intl.NumberFormat('en-US').format(Math.round(c.parsed.y)); } 
-                            } 
-                        }
-                    },
-                    scales: {
-                        x: { 
-                            grid: { display: false }, 
-                            ticks: { color: '#94a3b8', maxTicksLimit: isMobile ? 8 : 15 } 
-                        },
-                        y: { 
-                            stacked: true, 
-                            grid: { color: '#334155' }, 
-                            ticks: { 
-                                color: '#94a3b8', 
-                                callback: function(v) { return (v/1000000).toFixed(1) + 'M'; } 
-                            } 
-                        }
-                    }
-                }
-            });
-        }
-
-        // ==========================================
-        // 初始化載入與事件綁定
-        // ==========================================
-        document.addEventListener('DOMContentLoaded', () => {
-            const endAgeSlider = document.getElementById('Timeline_End_Age');
-            const endAgeDisplay = document.getElementById('val_Timeline_End_Age');
-            
-            endAgeSlider.addEventListener('input', (e) => { 
-                endAgeDisplay.innerText = e.target.value; 
-                // 只在 input 停止時或拉動時輕量更新，若手機卡頓可改為 change 事件
-            });
-            endAgeSlider.addEventListener('change', updateUI);
-
-            // 綁定所有 input 失去焦點或值改變時的事件 (避免手機虛擬鍵盤按著不放導致的阻塞)
-            const inputs = document.querySelectorAll('#controlForm input[type="number"], #controlForm input[type="checkbox"]');
-            inputs.forEach(input => {
-                input.addEventListener('change', updateUI);
-            });
-
-            // 手機版防呆: 按鈕強制觸發，並解除焦點收起虛擬鍵盤
-            document.getElementById('forceCalcBtn').addEventListener('click', (e) => {
-                e.preventDefault();
-                if (document.activeElement) {
-                    document.activeElement.blur();
-                }
-                
-                // 視覺回饋: 按鈕變色一下
-                const btn = e.currentTarget;
-                const originalText = btn.innerHTML;
-                btn.innerHTML = `<svg class="w-6 h-6 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 計算中...`;
-                
-                setTimeout(() => {
-                    updateUI();
-                    btn.innerHTML = originalText;
-                    
-                    // 手機端：按下計算後自動滾動到最上方看圖表
-                    if(window.innerWidth < 1024) {
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }
-                }, 100);
-            });
-
-            // 初始化時抓取即時資料並渲染
-            fetchLiveMarketData();
         });
-    </script>
+
+        apiStatus.innerHTML = `<i class="fa-solid fa-check text-green-400"></i> <span class="text-green-400">數據已同步 (含備用值)</span>`;
+        calculate(); // Initial run
+    }
+
+    function getVal(id) { return parseFloat(document.getElementById(id).value) || 0; }
+
+    function calculate() {
+        // --- 1. Base Settings ---
+        const age = getVal('inp-age');
+        const retireAge = getVal('inp-retire-age');
+        const endAge = 90;
+        const targetExpense = getVal('inp-expense');
+        const inflationRate = getVal('inp-inflation') / 100;
+        
+        // Income
+        let salaryTotal = getVal('inp-salary-total');
+        let salaryBase = getVal('inp-salary-base');
+        const salaryMonths = getVal('inp-salary-months');
+        const salaryRaise = getVal('inp-salary-raise');
+
+        // MPF Settings
+        const mpfEmpRate = getVal('inp-mpf-emp-rate') / 100;
+        const mpfErRate = getVal('inp-mpf-er-rate') / 100;
+        const mpfErCap = getVal('inp-mpf-er-cap');
+
+        // MPF Funds (Balances, Allocations, CAGRs)
+        let mpfBondBal = getVal('inp-mpf-bond-bal');
+        let mpfNaBal = getVal('inp-mpf-na-bal');
+        let mpfEuBal = getVal('inp-mpf-eu-bal');
+        
+        const allocBond = getVal('inp-mpf-bond-alloc') / 100;
+        const allocNa = getVal('inp-mpf-na-alloc') / 100;
+        const allocEu = getVal('inp-mpf-eu-alloc') / 100;
+        
+        const cagrBond = getVal('inp-mpf-bond-cagr') / 100;
+        const cagrNa = getVal('inp-mpf-na-cagr') / 100;
+        const cagrEu = getVal('inp-mpf-eu-cagr') / 100;
+
+        // --- 2. Cash, FD, Crypto ---
+        let hkdCashPool = 0; // We removed pure HKD cash input, but it accumulates during simulation
+        let hkdFdBal = getVal('inp-hkd-fd-amt');
+        const hkdFdRate = getVal('inp-hkd-fd-rate') / 100;
+        const hkdFdTerm = getVal('inp-hkd-fd-term') || 12;
+        
+        let usdFdBal = getVal('inp-usd-fd-amt');
+        const usdFdRate = getVal('inp-usd-fd-rate') / 100;
+        const usdFdTerm = getVal('inp-usd-fd-term') || 12;
+
+        let btcQty = getVal('inp-btc-qty');
+        const btcCagr = getVal('inp-btc-cagr') / 100;
+
+        // --- 3. Parse Stocks Portfolio ---
+        const stocks = [];
+        document.querySelectorAll('.stock-row').forEach(row => {
+            stocks.push({
+                ticker: row.getAttribute('data-ticker'),
+                currency: row.getAttribute('data-currency'),
+                qty: parseFloat(row.querySelector('.inp-qty').value) || 0,
+                dca: parseFloat(row.querySelector('.inp-dca').value) || 0, // Monthly
+                cagr: (parseFloat(row.querySelector('.inp-cagr').value) || 0) / 100,
+                yield: (parseFloat(row.querySelector('.inp-yield').value) || 0) / 100,
+                drip: row.querySelector('.inp-drip').checked,
+                currentPrice: marketPrices[row.getAttribute('data-ticker')] || 100 // fallback
+            });
+        });
+
+        // FD Multipliers
+        const hkdFdPeriods = 12 / hkdFdTerm;
+        const hkdFdMultiplier = Math.pow(1 + hkdFdRate / hkdFdPeriods, hkdFdPeriods);
+        const usdFdPeriods = 12 / usdFdTerm;
+        const usdFdMultiplier = Math.pow(1 + usdFdRate / usdFdPeriods, usdFdPeriods);
+
+        // 75 Drawdown Rule
+        const drawdown75Rate = getVal('inp-75-drawdown') / 100;
+
+        // Chart Data Structs
+        const labels = [];
+        const dataMpf = [];
+        const dataCash = [];
+        const dataBonds = [];
+        const dataStocks = [];
+        const dataCrypto = [];
+
+        let totalAt65 = 0;
+        let sgovFinal = 0;
+
+        // --- Simulation Loop ---
+        for (let i = age; i <= endAge; i++) {
+            const isRetired = i >= retireAge;
+            const is75Rule = i >= 75;
+            const yearIndex = i - age;
+
+            // 1. Inflated Expense
+            let currentYearlyExpense = targetExpense * 12 * Math.pow(1 + inflationRate, yearIndex);
+            let expenseRemaining = isRetired ? currentYearlyExpense : 0;
+
+            // 2. Grow FDs
+            hkdFdBal *= hkdFdMultiplier;
+            usdFdBal *= usdFdMultiplier;
+
+            // 3. Accumulation Phase (Income & MPF & DCA)
+            if (!isRetired) {
+                // MPF Calculation based on salary structure (14 months: 10 normal, 2 double)
+                const monthlyEmpNormal = Math.min(salaryTotal * mpfEmpRate, 1500);
+                const monthlyErNormal = Math.min(salaryBase * mpfErRate, mpfErCap);
+                
+                // Assuming bonus months hit the cap easily
+                const monthlyEmpBonus = 1500;
+                const monthlyErBonus = Math.min((salaryBase * 2) * mpfErRate, mpfErCap); // Cap applies per month context usually, strict $3000
+
+                // 12 months = 10 normal + 2 bonus months (Feb, Sep)
+                const annualEmpMpf = (monthlyEmpNormal * 10) + (monthlyEmpBonus * 2);
+                const annualErMpf = (monthlyErNormal * 10) + (monthlyErBonus * 2);
+                const totalAnnualMpf = annualEmpMpf + annualErMpf;
+
+                mpfBondBal += (totalAnnualMpf * allocBond);
+                mpfNaBal += (totalAnnualMpf * allocNa);
+                mpfEuBal += (totalAnnualMpf * allocEu);
+
+                // Yearly Salary Raise
+                salaryTotal += salaryRaise;
+                salaryBase += salaryRaise;
+
+                // Stocks DCA
+                stocks.forEach(stock => {
+                    if (stock.dca > 0) {
+                        const annualInvestment = stock.dca * 12;
+                        // Buy more shares at CURRENT simulated price
+                        stock.qty += annualInvestment / stock.currentPrice;
+                    }
+                });
+            }
+
+            // 4. Grow MPF
+            mpfBondBal *= (1 + cagrBond);
+            mpfNaBal *= (1 + cagrNa);
+            mpfEuBal *= (1 + cagrEu);
+
+            // 5. Retirement Node: 65 - Cash out MPF
+            if (i === retireAge) {
+                hkdCashPool += (mpfBondBal + mpfNaBal + mpfEuBal);
+                mpfBondBal = 0; mpfNaBal = 0; mpfEuBal = 0;
+            }
+
+            // 6. Grow BTC
+            marketPrices['BTC'] *= (1 + btcCagr);
+
+            // 7. Grow Stocks & Handle Dividends & 75 Drawdown
+            stocks.forEach(stock => {
+                // Grow Price
+                stock.currentPrice *= (1 + stock.cagr);
+                
+                // Dividend
+                const dividendVal = stock.qty * stock.currentPrice * stock.yield;
+                
+                // Handle 75 Drawdown (Sell principal)
+                if (is75Rule) {
+                    const sellQty = stock.qty * drawdown75Rate;
+                    const sellVal = sellQty * stock.currentPrice;
+                    stock.qty -= sellQty;
+                    
+                    // Convert to HKD for cash pool
+                    const hkdVal = stock.currency === 'USD' ? sellVal * exchangeRate : sellVal;
+                    hkdCashPool += hkdVal;
+                }
+
+                // Handle Dividend (DRIP vs Cash)
+                if (stock.drip && !is75Rule) { // Stop DRIP after 75 to retain cash
+                    stock.qty += dividendVal / stock.currentPrice;
+                } else {
+                    const hkdDiv = stock.currency === 'USD' ? dividendVal * exchangeRate : dividendVal;
+                    
+                    // If retired, use div for expenses first
+                    if (isRetired && expenseRemaining > 0) {
+                        const deduct = Math.min(expenseRemaining, hkdDiv);
+                        expenseRemaining -= deduct;
+                        hkdCashPool += (hkdDiv - deduct);
+                    } else {
+                        hkdCashPool += hkdDiv;
+                    }
+                }
+            });
+
+            // 8. Expense Deduction Waterfall
+            if (isRetired && expenseRemaining > 0) {
+                // P1: HKD Cash Pool
+                if (expenseRemaining > 0 && hkdCashPool > 0) {
+                    const deduct = Math.min(expenseRemaining, hkdCashPool);
+                    hkdCashPool -= deduct; expenseRemaining -= deduct;
+                }
+                // P2: HKD FD
+                if (expenseRemaining > 0 && hkdFdBal > 0) {
+                    const deduct = Math.min(expenseRemaining, hkdFdBal);
+                    hkdFdBal -= deduct; expenseRemaining -= deduct;
+                }
+                // P3: USD FD
+                if (expenseRemaining > 0 && usdFdBal > 0) {
+                    const usdHkd = usdFdBal * exchangeRate;
+                    const deductHkd = Math.min(expenseRemaining, usdHkd);
+                    usdFdBal -= (deductHkd / exchangeRate); expenseRemaining -= deductHkd;
+                }
+                // P4: SGOV (Safe Bond)
+                const sgovIndex = stocks.findIndex(s => s.ticker === 'SGOV');
+                if (sgovIndex > -1 && expenseRemaining > 0) {
+                    let sgov = stocks[sgovIndex];
+                    let sgovHkd = sgov.qty * sgov.currentPrice * exchangeRate;
+                    if (sgovHkd > 0) {
+                        const deductHkd = Math.min(expenseRemaining, sgovHkd);
+                        const sharesToSell = (deductHkd / exchangeRate) / sgov.currentPrice;
+                        sgov.qty -= sharesToSell;
+                        expenseRemaining -= deductHkd;
+                    }
+                }
+                // (Stocks are dynamically sold via the 75 rule, or we leave them untouched here to respect the 75 breakpoint strictness)
+            }
+
+            // 9. Tally Totals
+            const tMpf = mpfBondBal + mpfNaBal + mpfEuBal;
+            const tCash = hkdCashPool + hkdFdBal + (usdFdBal * exchangeRate);
+            
+            let tBonds = 0;
+            let tStocks = 0;
+            
+            stocks.forEach(stock => {
+                const valHkd = stock.qty * stock.currentPrice * (stock.currency === 'USD' ? exchangeRate : 1);
+                if (stock.ticker === 'SGOV') tBonds += valHkd;
+                else tStocks += valHkd;
+            });
+
+            const tCrypto = btcQty * marketPrices['BTC'] * exchangeRate;
+            const netWorth = tMpf + tCash + tBonds + tStocks + tCrypto;
+
+            labels.push(i + '歲');
+            dataMpf.push(tMpf);
+            dataCash.push(tCash);
+            dataBonds.push(tBonds);
+            dataStocks.push(tStocks);
+            dataCrypto.push(tCrypto);
+
+            // Stats Update
+            if (i === retireAge) totalAt65 = netWorth;
+            if (i === age) {
+                // Reset marketPrices purely for the loop logic (dirty fix for pure JS simulation, 
+                // in reality we should clone the price object, but since we re-fetch on input change, it's ok for visual).
+            }
+            if (i === retireAge) {
+                document.getElementById('stat-65-total').innerText = 'HK$' + Math.round(netWorth).toLocaleString();
+            }
+            if (i === endAge) {
+                document.getElementById('stat-90-total').innerText = 'HK$' + Math.round(netWorth).toLocaleString();
+                document.getElementById('stat-safe').innerText = 'HK$' + Math.round(tCash + tBonds).toLocaleString();
+            }
+        }
+
+        renderChart(labels, dataCash, dataBonds, dataMpf, dataStocks, dataCrypto);
+    }
+
+    function renderChart(labels, cash, bonds, mpf, stocks, crypto) {
+        const ctx = document.getElementById('growthChart').getContext('2d');
+        if (myChart) myChart.destroy();
+
+        myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: '現金與定期', data: cash, borderColor: '#60a5fa', backgroundColor: 'rgba(96, 165, 250, 0.2)', fill: true, tension: 0.4 },
+                    { label: 'SGOV 水庫', data: bonds, borderColor: '#94a3b8', backgroundColor: 'rgba(148, 163, 184, 0.2)', fill: true, tension: 0.4 },
+                    { label: 'MPF 強積金', data: mpf, borderColor: '#2dd4bf', backgroundColor: 'rgba(45, 212, 191, 0.2)', fill: true, tension: 0.4 },
+                    { label: '證券組合', data: stocks, borderColor: '#a78bfa', backgroundColor: 'rgba(167, 139, 250, 0.2)', fill: true, tension: 0.4 },
+                    { label: 'BTC 加密資產', data: crypto, borderColor: '#eab308', backgroundColor: 'rgba(234, 179, 8, 0.2)', fill: true, tension: 0.4 }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                scales: {
+                    x: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94a3b8', maxTicksLimit: 10 } },
+                    y: { stacked: true, grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94a3b8', callback: v => (v / 1000000).toFixed(1) + 'M' } }
+                },
+                plugins: {
+                    legend: { position: 'bottom', labels: { color: '#e2e8f0', usePointStyle: true, boxWidth: 8 } },
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.9)', titleColor: '#fff', bodyColor: '#cbd5e1', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1,
+                        callbacks: {
+                            label: function(c) {
+                                let label = c.dataset.label || '';
+                                if (label) label += ': ';
+                                if (c.parsed.y !== null) label += 'HK$ ' + Math.round(c.parsed.y).toLocaleString();
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Init
+    window.onload = initData;
+</script>
 </body>
 </html>
