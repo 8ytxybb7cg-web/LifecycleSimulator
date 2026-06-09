@@ -49,7 +49,7 @@
         .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
     </style>
 </head>
-<body class="h-screen flex flex-col font-sans overflow-hidden bg-[#0f172a]">
+<body class="min-h-screen lg:h-screen flex flex-col font-sans lg:overflow-hidden bg-[#0f172a]">
 
     <header class="bg-slateBlue border-b border-charcoalGray px-4 lg:px-6 py-3 flex justify-between items-center shrink-0 shadow-md z-20">
         <div class="flex items-center gap-2 lg:gap-3">
@@ -62,10 +62,10 @@
         </div>
     </header>
 
-    <div class="flex flex-col lg:flex-row flex-1 overflow-hidden relative">
+    <div class="flex flex-col lg:flex-row flex-1 relative lg:overflow-hidden">
         
-        <aside class="w-full lg:w-[420px] bg-slateBlue border-r border-charcoalGray overflow-y-auto shrink-0 flex flex-col relative order-2 lg:order-1 shadow-2xl z-10">
-            <div class="p-4 lg:p-6 pb-28 lg:pb-6">
+        <aside class="w-full lg:w-[420px] bg-slateBlue lg:border-r border-charcoalGray shrink-0 flex flex-col relative order-2 lg:order-1 shadow-2xl z-10 lg:overflow-y-auto">
+            <div class="p-4 lg:p-6 pb-6">
                 <h2 class="text-lg font-semibold text-warmWhite mb-4 border-b border-charcoalGray pb-2">參數控制中心</h2>
                 
                 <form id="controlForm" class="space-y-5">
@@ -154,7 +154,7 @@
                 </form>
             </div>
 
-            <div class="absolute lg:sticky bottom-0 left-0 w-full bg-slateBlue/95 backdrop-blur border-t border-accentBlue/30 p-4 pb-safe shadow-[0_-10px_20px_-5px_rgba(0,0,0,0.5)] z-50">
+            <div class="sticky bottom-0 left-0 w-full bg-slateBlue/95 backdrop-blur border-t border-accentBlue/30 p-4 pb-safe shadow-[0_-10px_20px_-5px_rgba(0,0,0,0.5)] z-50">
                 <button type="button" id="forceCalcBtn" class="w-full bg-gradient-to-r from-accentBlue to-blue-500 hover:from-blue-500 hover:to-blue-400 text-warmWhite font-bold text-lg py-3.5 px-4 rounded-xl shadow-[0_0_15px_rgba(59,130,246,0.4)] active:scale-95 transition-all duration-200 flex items-center justify-center gap-2">
                     <svg class="w-6 h-6 animate-[spin_3s_linear_infinite]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                     強制執行動態精算
@@ -162,7 +162,7 @@
             </div>
         </aside>
 
-        <main class="flex-1 flex flex-col overflow-y-auto p-4 lg:p-8 relative order-1 lg:order-2 bg-[#0a0f1c]">
+        <main class="flex-1 flex flex-col p-4 lg:p-8 relative order-1 lg:order-2 bg-[#0a0f1c] lg:overflow-y-auto">
             <div id="errorAlert" class="hidden mb-4 p-4 bg-red-900/40 border-l-4 border-red-500 text-red-200 rounded text-sm shadow-md"></div>
 
             <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-6 mb-6">
@@ -211,7 +211,7 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-charcoalGray/50 text-slate-400" id="assetTableBody">
-                            </tbody>
+                        </tbody>
                     </table>
                 </div>
             </div>
@@ -249,10 +249,10 @@
         function showError(msg) {
             const el = document.getElementById('errorAlert');
             if(msg) { 
-                el.innerText = "精算引擎提示: " + msg; 
+                el.innerText = "精算引擎提示: " + msg;
                 el.classList.remove('hidden'); 
             } else { 
-                el.classList.add('hidden'); 
+                el.classList.add('hidden');
             }
         }
 
@@ -286,8 +286,7 @@
         // 核心模擬計算引擎
         function runSimulation() {
             try {
-                showError(null); 
-
+                showError(null);
                 const p = {
                     currentAge: getVal('User_Current_Age'),
                     endAge: getVal('Timeline_End_Age'),
@@ -320,21 +319,18 @@
                     
                     sellRate: getVal('SellRate_75', true) / 100,
                 };
-
                 // 極端值防呆：若年份輸入異常，強行介入修正，避免無窮迴圈崩潰
                 if (p.currentAge >= p.endAge) p.endAge = p.currentAge + 1;
                 if (p.currentAge >= p.retireAge) p.retireAge = p.currentAge;
                 if (p.retireAge > p.endAge) p.retireAge = p.endAge;
-                
                 // 匯率若為 0 會導致除以 0 錯誤
                 if (p.usdHkd <= 0) p.usdHkd = 7.8;
-
+                
                 // 初始化資產池
                 let assets = {
                     mpfNA: getVal('Initial_MPF_NA', true),
                     mpfEU: getVal('Initial_MPF_EU', true),
                     mpfBond: getVal('Initial_MPF_Bond', true),
-                    
                     vooUsd: getVal('Init_VOO', true) * MARKET_PRICES.VOO,
                     qqqUsd: getVal('Init_QQQ', true) * MARKET_PRICES.QQQ,
                     schdUsd: getVal('Init_SCHD', true) * MARKET_PRICES.SCHD,
@@ -343,16 +339,16 @@
                     hsbcHkd: getVal('Init_HSBC', true) * MARKET_PRICES.HSBC_HKD,
                     cashHkd: getVal('Cash_HKD_Buffer', true)
                 };
-
+                
                 let simData = [];
                 let currentMonthlyIncome = p.monthlyIncome;
                 let currentBaseSalary = p.baseSalary;
-
+                
                 for (let age = p.currentAge; age <= p.endAge; age++) {
                     let isAccumulation = age < p.retireAge;
                     let isPhase1 = age >= p.retireAge && age < 75;
                     let isPhase2 = age >= 75;
-
+                    
                     // 退休年齡清算 MPF
                     if (age === p.retireAge) {
                         assets.cashHkd += (assets.mpfNA + assets.mpfEU + assets.mpfBond);
@@ -361,7 +357,7 @@
 
                     // HSBC 0005.HK 無論何時期皆純派息入港幣現金流
                     assets.cashHkd += (assets.hsbcHkd * p.yieldHsbc);
-
+                    
                     if (isAccumulation) {
                         // 累積期
                         let empRegMpf = currentMonthlyIncome >= 7100 ? Math.min(1500, currentMonthlyIncome * p.empMpfRate) : 0;
@@ -375,12 +371,12 @@
                         assets.mpfNA = (assets.mpfNA + totalAnnualMpfInflow * 0.60) * (1 + p.cagrNA);
                         assets.mpfEU = (assets.mpfEU + totalAnnualMpfInflow * 0.20) * (1 + p.cagrEU);
                         assets.mpfBond = (assets.mpfBond + totalAnnualMpfInflow * 0.20) * (1 + p.cagrBond);
-
+                        
                         // 核心股票 DCA
                         let annualDcaUsd = p.dcaUsd * 12;
                         assets.vooUsd += annualDcaUsd / 2;
                         assets.qqqUsd += annualDcaUsd / 2;
-
+                        
                         // 雙糧分流 -> SGOV 水庫與股票
                         let bonusCashUsd = (currentBaseSalary * 2) / p.usdHkd;
                         let safetyFlowUsd = bonusCashUsd * 0.5;
@@ -391,7 +387,7 @@
 
                         let sgovDividend = assets.sgovUsd * p.yieldSgov;
                         let totalToSgov = safetyFlowUsd + sgovDividend;
-
+                        
                         if (assets.sgovUsd < p.sgovLimitUsd) {
                             if (assets.sgovUsd + totalToSgov <= p.sgovLimitUsd) {
                                 assets.sgovUsd += totalToSgov;
@@ -401,7 +397,8 @@
                                 assets.vooUsd += overflow / 3; assets.qqqUsd += overflow / 3; assets.schdUsd += overflow / 3;
                             }
                         } else {
-                            assets.vooUsd += totalToSgov / 3; assets.qqqUsd += totalToSgov / 3; assets.schdUsd += totalToSgov / 3;
+                            assets.vooUsd += totalToSgov / 3;
+                            assets.qqqUsd += totalToSgov / 3; assets.schdUsd += totalToSgov / 3;
                         }
 
                         // 個別 DRIP 計算
@@ -409,7 +406,6 @@
                             if (isDRIP) return { newBalance: assetUsd * (1 + cagr), cashOut: 0 };
                             return { newBalance: assetUsd * (1 + Math.max(0, cagr - divYield)), cashOut: assetUsd * divYield };
                         };
-
                         let vData = processDRIP(assets.vooUsd, p.cagrCore, DIVIDEND_YIELDS.VOO, p.dripVOO);
                         let qData = processDRIP(assets.qqqUsd, p.cagrCore, DIVIDEND_YIELDS.QQQ, p.dripQQQ);
                         let sData = processDRIP(assets.schdUsd, p.cagrDiv, DIVIDEND_YIELDS.SCHD, p.dripSCHD);
@@ -419,7 +415,7 @@
 
                         currentMonthlyIncome += p.salaryIncrease;
                         currentBaseSalary += p.salaryIncrease;
-
+                        
                     } else {
                         // 提取期 Phase B
                         let annualExpenses = p.expenses * 12;
@@ -430,7 +426,6 @@
                                 if (isDRIP) return { newBalance: assetUsd * (1 + cagr), cashOut: 0 };
                                 return { newBalance: assetUsd * (1 + Math.max(0, cagr - divYield)), cashOut: assetUsd * divYield };
                             };
-
                             let vData = processDRIP(assets.vooUsd, p.cagrCore, DIVIDEND_YIELDS.VOO, p.dripVOO);
                             let qData = processDRIP(assets.qqqUsd, p.cagrCore, DIVIDEND_YIELDS.QQQ, p.dripQQQ);
                             let sData = processDRIP(assets.schdUsd, p.cagrDiv, DIVIDEND_YIELDS.SCHD, p.dripSCHD);
@@ -441,7 +436,6 @@
                         } else if (isPhase2) {
                             // 75歲後強制關閉 DRIP
                             dividendCashUsd += assets.vooUsd * DIVIDEND_YIELDS.VOO + assets.qqqUsd * DIVIDEND_YIELDS.QQQ + assets.schdUsd * DIVIDEND_YIELDS.SCHD;
-                            
                             assets.vooUsd *= (1 + Math.max(0, p.cagrCore - DIVIDEND_YIELDS.VOO));
                             assets.qqqUsd *= (1 + Math.max(0, p.cagrCore - DIVIDEND_YIELDS.QQQ));
                             assets.schdUsd *= (1 + Math.max(0, p.cagrDiv - DIVIDEND_YIELDS.SCHD));
@@ -454,7 +448,8 @@
                                 let sellQqq = assets.qqqUsd * p.sellRate;
                                 let sellSchd = assets.schdUsd * p.sellRate;
                                 
-                                assets.vooUsd -= sellVoO; assets.qqqUsd -= sellQqq; assets.schdUsd -= sellSchd;
+                                assets.vooUsd -= sellVoO; assets.qqqUsd -= sellQqq;
+                                assets.schdUsd -= sellSchd;
                                 assets.cashHkd += (sellVoO + sellQqq + sellSchd) * p.usdHkd;
                             }
                         }
@@ -469,7 +464,7 @@
                     let totalEquitiesHkd = (assets.vooUsd + assets.qqqUsd + assets.schdUsd) * p.usdHkd;
                     let totalSgovHkd = assets.sgovUsd * p.usdHkd;
                     let totalPortHkd = totalMpfHkd + assets.cashHkd + totalEquitiesHkd + totalSgovHkd + assets.hsbcHkd;
-
+                    
                     simData.push({
                         age: age,
                         mpfHkd: totalMpfHkd,
@@ -530,14 +525,13 @@
                     <td class="px-4 lg:px-6 py-2.5 border-b border-charcoalGray/50 font-semibold text-warmWhite">${formatCurrency(data[0].hsbcHkd)}</td>
                 </tr>
             `;
-
+            
             if (chartInstance) { chartInstance.destroy(); }
 
             const ctx = document.getElementById('lifecycleChart').getContext('2d');
-            
             // 判斷是否為手機尺寸以調整字體大小與隱藏格線
             const isMobile = window.innerWidth < 1024;
-
+            
             chartInstance = new Chart(ctx, {
                 type: 'line',
                 data: {
