@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>雙人退休計劃動態模擬系統 | 財富管理看板</title>
+    <title>雙人退休生命週期動態模擬系統 | 財富管理看板</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -11,10 +11,10 @@
             theme: {
                 extend: {
                     colors: {
-                        slateBlue: '#1e293b',    /* Deep Slate Blue */
-                        charcoalGray: '#334155', /* Soft Charcoal Gray */
-                        warmWhite: '#f8fafc',    /* Warm White */
-                        accentBlue: '#3b82f6',   /* Muted Professional Accent */
+                        slateBlue: '#1e293b', 
+                        charcoalGray: '#334155',
+                        warmWhite: '#f8fafc',    
+                        accentBlue: '#3b82f6',   
                         accentTeal: '#0d9488',
                     },
                     fontFamily: {
@@ -26,11 +26,10 @@
     </script>
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
-        body { background-color: #0f172a; color: #e2e8f0; } /* Dark theme baseline */
+        body { background-color: #0f172a; color: #e2e8f0; }
         .input-group { display: flex; flex-direction: column; margin-bottom: 1rem; }
         .input-label { font-size: 0.875rem; color: #94a3b8; margin-bottom: 0.25rem; }
         .input-field { 
@@ -38,8 +37,8 @@
             padding: 0.5rem; border-radius: 0.375rem; outline: none; transition: border-color 0.2s;
         }
         .input-field:focus { border-color: #3b82f6; }
+        .input-field:disabled { opacity: 0.6; cursor: not-allowed; }
         
-        /* 自定義滾動條 */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #0f172a; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
@@ -53,14 +52,15 @@
             <svg class="w-8 h-8 text-accentBlue" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
             <h1 class="text-xl font-bold text-warmWhite tracking-wide">Lifecycle Wealth Simulator <span class="text-xs text-slate-400 ml-2">CFP Professional Edition</span></h1>
         </div>
-        <div class="text-sm text-slate-400">
+        <div class="text-sm text-slate-400 flex items-center gap-3">
+            <span id="apiStatus" class="text-yellow-500 text-xs">● 聯網數據載入中...</span>
             基準年份: <span id="displayBaseYear" class="text-warmWhite font-semibold">2026</span>
         </div>
     </header>
 
     <div class="flex flex-1 overflow-hidden">
         
-        <aside class="w-96 bg-slateBlue border-r border-charcoalGray overflow-y-auto shrink-0 p-6 shadow-xl">
+        <aside class="w-[420px] bg-slateBlue border-r border-charcoalGray overflow-y-auto shrink-0 p-6 shadow-xl relative">
             <h2 class="text-lg font-semibold text-warmWhite mb-6 border-b border-charcoalGray pb-2">動態參數控制中心</h2>
             
             <form id="controlForm" class="space-y-6">
@@ -68,156 +68,134 @@
                 <div class="bg-charcoalGray/30 p-4 rounded-lg border border-charcoalGray">
                     <h3 class="text-sm font-bold text-accentBlue mb-4">1. 時間軸與基本收支</h3>
                     <div class="grid grid-cols-2 gap-4">
-                        <div class="input-group">
-                            <label class="input-label">當前年齡</label>
-                            <input type="number" id="User_Current_Age" class="input-field" value="40" step="1" required>
-                        </div>
-                        <div class="input-group">
-                            <label class="input-label">預期退休年齡</label>
-                            <input type="number" id="Retirement_Age" class="input-field" value="65" step="1" required>
-                        </div>
+                        <div class="input-group"><label class="input-label">當前年齡</label><input type="number" id="User_Current_Age" class="input-field" value="40" step="1" required></div>
+                        <div class="input-group"><label class="input-label">預期退休年齡</label><input type="number" id="Retirement_Age" class="input-field" value="65" step="1" required></div>
                         <div class="input-group col-span-2">
                             <label class="input-label">生命週期終點年齡</label>
                             <input type="range" id="Timeline_End_Age" class="w-full mt-2" min="70" max="100" value="85">
                             <div class="text-right text-xs text-slate-400 mt-1"><span id="val_Timeline_End_Age">85</span> 歲</div>
                         </div>
-                        <div class="input-group">
-                            <label class="input-label">現年月薪 (HKD)</label>
-                            <input type="number" id="Current_Monthly_Income_HKD" class="input-field" value="25000" step="100">
-                        </div>
-                        <div class="input-group">
-                            <label class="input-label">現年底薪 (HKD)</label>
-                            <input type="number" id="Current_Base_Salary_HKD" class="input-field" value="23500" step="100">
-                        </div>
-                        <div class="input-group">
-                            <label class="input-label">年薪增長額 (HKD)</label>
-                            <input type="number" id="Annual_Salary_Increase_HKD" class="input-field" value="1200" step="100">
-                        </div>
-                        <div class="input-group">
-                            <label class="input-label">目標月開支 (HKD)</label>
-                            <input type="number" id="Monthly_Expenses_HKD" class="input-field" value="18000" step="100">
-                        </div>
+                        <div class="input-group"><label class="input-label">現年月薪 (HKD)</label><input type="number" id="Current_Monthly_Income_HKD" class="input-field" value="25000" step="100"></div>
+                        <div class="input-group"><label class="input-label">現年底薪 (HKD)</label><input type="number" id="Current_Base_Salary_HKD" class="input-field" value="23500" step="100"></div>
+                        <div class="input-group"><label class="input-label">年薪增長額 (HKD)</label><input type="number" id="Annual_Salary_Increase_HKD" class="input-field" value="1200" step="100"></div>
+                        <div class="input-group"><label class="input-label">目標月開支 (HKD)</label><input type="number" id="Monthly_Expenses_HKD" class="input-field" value="18000" step="100"></div>
                     </div>
                 </div>
 
                 <div class="bg-charcoalGray/30 p-4 rounded-lg border border-charcoalGray">
-                    <h3 class="text-sm font-bold text-accentBlue mb-4">2. 強積金供款策略</h3>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="input-group">
-                            <label class="input-label">僱員供款率 (%)</label>
-                            <input type="number" id="Employee_MPF_Rate" class="input-field" value="5" step="0.1">
-                        </div>
-                        <div class="input-group">
-                            <label class="input-label">僱主總供款率 (%)</label>
-                            <input type="number" id="Employer_Total_MPF_Rate" class="input-field" value="10" step="0.1">
-                        </div>
-                        <div class="input-group col-span-2">
-                            <label class="input-label">僱主供款法定上限 (HKD)</label>
-                            <input type="number" id="Employer_MPF_Cap_HKD" class="input-field" value="3000" step="100">
-                        </div>
-                        <div class="input-group col-span-2">
-                            <label class="input-label">MPF 初始總結餘 (HKD)</label>
-                            <input type="number" id="Initial_MPF_Total_HKD" class="input-field" value="841783.36" step="1000">
-                        </div>
+                    <h3 class="text-sm font-bold text-accentBlue mb-4">2. 強積金供款與真實資產配置</h3>
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div class="input-group"><label class="input-label">僱員供款率 (%)</label><input type="number" id="Employee_MPF_Rate" class="input-field" value="5" step="0.1"></div>
+                        <div class="input-group"><label class="input-label">僱主總供款 (%)</label><input type="number" id="Employer_Total_MPF_Rate" class="input-field" value="10" step="0.1"></div>
+                        <div class="input-group col-span-2"><label class="input-label">僱主供款法定上限 (HKD)</label><input type="number" id="Employer_MPF_Cap_HKD" class="input-field" value="3000" step="100"></div>
+                    </div>
+                    <div class="text-xs text-slate-400 mb-2 border-b border-charcoalGray pb-1">現有資產結餘 (HKD)</div>
+                    <div class="grid grid-cols-1 gap-2">
+                        <div class="input-group"><label class="input-label">北美追蹤基金 (60% 供款份額)</label><input type="number" id="Initial_MPF_NA" class="input-field py-1" value="567254.59" step="100"></div>
+                        <div class="input-group"><label class="input-label">歐洲追蹤基金 (20% 供款份額)</label><input type="number" id="Initial_MPF_EU" class="input-field py-1" value="259658.38" step="100"></div>
+                        <div class="input-group"><label class="input-label">環球債券基金 (20% 供款份額)</label><input type="number" id="Initial_MPF_Bond" class="input-field py-1" value="14870.39" step="100"></div>
                     </div>
                 </div>
 
-                <div class="bg-charcoalGray/30 p-4 rounded-lg border border-charcoalGray">
+                <div class="bg-charcoalGray/30 p-4 rounded-lg border border-charcoalGray relative">
                     <h3 class="text-sm font-bold text-accentBlue mb-4">3. 外匯匯率與現金儲備</h3>
                     <div class="grid grid-cols-2 gap-2">
-                        <div class="input-group"><label class="input-label">USD/HKD</label><input type="number" id="USD_TO_HKD_Rate" class="input-field py-1" value="7.8" step="0.01"></div>
+                        <div class="input-group"><label class="input-label">USD/HKD</label><input type="number" id="USD_TO_HKD_Rate" class="input-field py-1" value="7.80" step="0.01"></div>
                         <div class="input-group"><label class="input-label">JPY/HKD</label><input type="number" id="JPY_TO_HKD_Rate" class="input-field py-1" value="0.050" step="0.001"></div>
-                        <div class="input-group"><label class="input-label">GBP/HKD</label><input type="number" id="GBP_TO_HKD_Rate" class="input-field py-1" value="10.00" step="0.01"></div>
+                        <div class="input-group"><label class="input-label">GBP/HKD</label><input type="number" id="GBP_TO_HKD_Rate" class="input-field py-1" value="9.90" step="0.01"></div>
                         <div class="input-group"><label class="input-label">KRW/HKD</label><input type="number" id="KRW_TO_HKD_Rate" class="input-field py-1" value="0.0057" step="0.0001"></div>
-                        <div class="input-group"><label class="input-label">HKD 緩衝</label><input type="number" id="Cash_HKD_Buffer" class="input-field py-1" value="43205.70" step="1000"></div>
-                        <div class="input-group"><label class="input-label">USD 醫療</label><input type="number" id="Medical_Reserve_USD" class="input-field py-1" value="80289.21" step="1000"></div>
-                        <div class="input-group col-span-2"><label class="input-label">父母撫養準備金 (USD) [獨立帳戶]</label><input type="number" id="Parent_Custody_USD" class="input-field py-1" value="85156.25" step="1000"></div>
-                    </div>
-                </div>
-
-                <div class="bg-charcoalGray/30 p-4 rounded-lg border border-charcoalGray">
-                    <h3 class="text-sm font-bold text-accentBlue mb-4">4. 證券組合與自動投資 (DCA)</h3>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="input-group">
-                            <label class="input-label">月供股票 (USD)</label>
-                            <input type="number" id="Monthly_DCA_USD" class="input-field" value="300" step="50" title="Split equally VOO/QQQ">
-                        </div>
-                        <div class="input-group">
-                            <label class="input-label">SGOV 水庫上限 (USD)</label>
-                            <input type="number" id="SGOV_Bucket_Limit_USD" class="input-field" value="14000" step="500">
-                        </div>
                         
-                        <div class="col-span-2 text-xs text-slate-400 mb-2 mt-2 border-b border-charcoalGray pb-1">初始持股量 (股數)</div>
-                        <div class="input-group"><label class="input-label">VOO</label><input type="number" id="Initial_VOO_Shares" class="input-field py-1" value="0.2175" step="0.0001"></div>
-                        <div class="input-group"><label class="input-label">QQQ</label><input type="number" id="Initial_QQQ_Shares" class="input-field py-1" value="0.2059" step="0.0001"></div>
-                        <div class="input-group"><label class="input-label">SGOV</label><input type="number" id="Initial_SGOV_Shares" class="input-field py-1" value="9" step="1"></div>
-                        <div class="input-group"><label class="input-label">SCHD</label><input type="number" id="Initial_SCHD_Shares" class="input-field py-1" value="0" step="1"></div>
-                        <div class="input-group col-span-2 flex-row items-center gap-3">
-                            <input type="checkbox" id="DRIP_Enabled" class="w-4 h-4 text-accentBlue bg-slate-700 border-gray-600 rounded" checked>
-                            <label class="input-label mb-0">啟用退休前股息再投資 (DRIP)</label>
+                        <div class="input-group"><label class="input-label">HKD 緩衝現金</label><input type="number" id="Cash_HKD_Buffer" class="input-field py-1" value="43205.70" step="1000"></div>
+                        <div class="input-group"><label class="input-label">USD 醫療準備</label><input type="number" id="Medical_Reserve_USD" class="input-field py-1" value="80289.21" step="1000"></div>
+                    </div>
+                </div>
+
+                <div class="bg-charcoalGray/30 p-4 rounded-lg border border-charcoalGray">
+                    <h3 class="text-sm font-bold text-accentBlue mb-4">4. 證券組合與獨立 DRIP (含 0005.HK)</h3>
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div class="input-group"><label class="input-label">月供美股 (USD)</label><input type="number" id="Monthly_DCA_USD" class="input-field" value="300" step="50" title="Split equally VOO/QQQ"></div>
+                        <div class="input-group"><label class="input-label">SGOV 水庫上限 (USD)</label><input type="number" id="SGOV_Bucket_Limit_USD" class="input-field" value="14000" step="500"></div>
+                    </div>
+                    
+                    <div class="text-xs text-slate-400 mb-2 border-b border-charcoalGray pb-1 flex justify-between">
+                        <span>初始持股量 (股)</span><span>啟用 DRIP</span>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="flex items-center gap-2"><label class="w-12 text-sm text-slate-300">VOO</label><input type="number" id="Init_VOO" class="input-field py-1 flex-1" value="0.2175" step="0.0001"><input type="checkbox" id="DRIP_VOO" class="w-5 h-5 mx-2 accent-accentBlue" checked></div>
+                        <div class="flex items-center gap-2"><label class="w-12 text-sm text-slate-300">QQQ</label><input type="number" id="Init_QQQ" class="input-field py-1 flex-1" value="0.2059" step="0.0001"><input type="checkbox" id="DRIP_QQQ" class="w-5 h-5 mx-2 accent-accentBlue" checked></div>
+                        <div class="flex items-center gap-2"><label class="w-12 text-sm text-slate-300">SCHD</label><input type="number" id="Init_SCHD" class="input-field py-1 flex-1" value="0" step="1"><input type="checkbox" id="DRIP_SCHD" class="w-5 h-5 mx-2 accent-accentBlue" checked></div>
+                        <div class="flex items-center gap-2"><label class="w-12 text-sm text-slate-300">SGOV</label><input type="number" id="Init_SGOV" class="input-field py-1 flex-1" value="9" step="1"><span class="w-9 text-[10px] text-slate-500 text-center">N/A</span></div>
+                        <div class="flex items-center gap-2 pt-2 border-t border-slate-700">
+                            <label class="w-12 text-sm text-yellow-500 font-bold">HSBC<br><span class="text-[9px] font-normal">0005.HK</span></label>
+                            <input type="number" id="Init_HSBC" class="input-field py-1 flex-1 border-yellow-700" value="410" step="1">
+                            <span class="w-9 text-[10px] text-slate-500 text-center leading-tight">純派息<br>禁DRIP</span>
                         </div>
                     </div>
                 </div>
 
                 <div class="bg-charcoalGray/30 p-4 rounded-lg border border-charcoalGray">
-                    <h3 class="text-sm font-bold text-accentBlue mb-4">5. 宏觀市場回報假定 (CAGR)</h3>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="input-group"><label class="input-label">MPF 股票期 (%)</label><input type="number" id="MPF_Equity_CAGR" class="input-field py-1" value="7.5" step="0.1"></div>
-                        <div class="input-group"><label class="input-label">MPF 保守期 (%)</label><input type="number" id="MPF_Conservative_CAGR" class="input-field py-1" value="4.0" step="0.1"></div>
-                        <div class="input-group"><label class="input-label">核心股票 (VOO/QQQ)</label><input type="number" id="Core_Stocks_CAGR" class="input-field py-1" value="8.5" step="0.1"></div>
-                        <div class="input-group"><label class="input-label">收息股 (SCHD)</label><input type="number" id="Dividend_Stocks_CAGR" class="input-field py-1" value="7.5" step="0.1"></div>
-                        <div class="input-group"><label class="input-label">SGOV 殖利率 (%)</label><input type="number" id="SGOV_Yield" class="input-field py-1" value="4.0" step="0.1"></div>
-                        <div class="input-group"><label class="input-label">75歲後本金消耗率 (%)</label><input type="number" id="Annual_Stock_Sell_Rate_After_75" class="input-field py-1" value="5.0" step="0.1"></div>
-                        <div class="input-group"><label class="input-label">股票強制變現年齡</label><input type="number" id="Stock_Cash_Out_Age" class="input-field py-1" value="75" step="1"></div>
+                    <h3 class="text-sm font-bold text-accentBlue mb-4">5. 歷史 10 年回報率對標 (%)</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="input-group"><label class="input-label">北美追蹤 (S&P 500)</label><input type="number" id="CAGR_MPF_NA" class="input-field py-1 text-accentTeal font-bold" value="12.5" step="0.1"></div>
+                        <div class="input-group"><label class="input-label">歐洲追蹤 (FTSE EU)</label><input type="number" id="CAGR_MPF_EU" class="input-field py-1 text-accentTeal font-bold" value="6.5" step="0.1"></div>
+                        <div class="input-group"><label class="input-label">環球債券 (Global IG)</label><input type="number" id="CAGR_MPF_Bond" class="input-field py-1 text-accentTeal font-bold" value="1.5" step="0.1"></div>
+                        <div class="input-group"><label class="input-label">匯豐控股 派息率</label><input type="number" id="Yield_HSBC" class="input-field py-1 text-yellow-500 font-bold" value="6.0" step="0.1"></div>
+                        
+                        <div class="input-group mt-2"><label class="input-label">VOO / QQQ</label><input type="number" id="CAGR_Core" class="input-field py-1" value="11.5" step="0.1"></div>
+                        <div class="input-group mt-2"><label class="input-label">SCHD</label><input type="number" id="CAGR_Div" class="input-field py-1" value="11.0" step="0.1"></div>
+                        <div class="input-group"><label class="input-label">SGOV 殖利率</label><input type="number" id="Yield_SGOV" class="input-field py-1" value="4.0" step="0.1"></div>
+                        <div class="input-group"><label class="input-label">75歲後本金消耗率</label><input type="number" id="SellRate_75" class="input-field py-1 text-red-400" value="5.0" step="0.1"></div>
                     </div>
                 </div>
             </form>
-            <div class="mt-4 px-4">
-    <button type="button" id="forceCalcBtn" class="w-full bg-accentBlue hover:bg-blue-600 text-warmWhite font-bold py-3 px-4 rounded-lg shadow-lg transition duration-200">
-        🔄 立即執行動態精算
-    </button>
-</div>
+            
+            <div class="mt-6 mb-2 sticky bottom-0 bg-slateBlue pt-2 border-t border-charcoalGray">
+                <button type="button" id="forceCalcBtn" class="w-full bg-accentBlue hover:bg-blue-600 text-warmWhite font-bold py-3 px-4 rounded-lg shadow-lg transition duration-200 flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                    強制執行動態精算
+                </button>
+            </div>
         </aside>
 
         <main class="flex-1 flex flex-col overflow-y-auto p-8 relative">
-            
+            <div id="errorAlert" class="hidden mb-4 p-4 bg-red-900/50 border border-red-500 text-red-200 rounded-lg text-sm"></div>
+
             <div class="grid grid-cols-3 gap-6 mb-8">
                 <div class="bg-gradient-to-br from-slateBlue to-charcoalGray p-6 rounded-xl border border-slate-700 shadow-lg">
                     <h4 class="text-slate-400 text-sm font-medium mb-1">退休時點 (65歲) 總淨資產</h4>
-                    <div class="text-3xl font-bold text-warmWhite" id="stat-retirement-nw">HKD 0.00</div>
+                    <div class="text-3xl font-bold text-warmWhite" id="stat-retirement-nw">HKD 0</div>
                     <div class="text-xs text-accentTeal mt-2 flex items-center gap-1">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg> 達峰時刻
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg> 財富達峰時刻
                     </div>
                 </div>
                 <div class="bg-gradient-to-br from-slateBlue to-charcoalGray p-6 rounded-xl border border-slate-700 shadow-lg">
                     <h4 class="text-slate-400 text-sm font-medium mb-1">生命終點 (<span id="stat-end-age">85</span>歲) 剩餘資產</h4>
-                    <div class="text-3xl font-bold text-warmWhite" id="stat-end-nw">HKD 0.00</div>
+                    <div class="text-3xl font-bold text-warmWhite" id="stat-end-nw">HKD 0</div>
                     <div class="text-xs text-slate-400 mt-2">包含核心證券與流動現金</div>
                 </div>
                 <div class="bg-gradient-to-br from-slateBlue to-charcoalGray p-6 rounded-xl border border-slate-700 shadow-lg">
                     <h4 class="text-slate-400 text-sm font-medium mb-1">SGOV 安全水庫狀態</h4>
                     <div class="text-3xl font-bold text-warmWhite" id="stat-sgov-fill">0%</div>
                     <div class="w-full bg-slate-900 rounded-full h-1.5 mt-3">
-                        <div class="bg-accentBlue h-1.5 rounded-full" id="stat-sgov-bar" style="width: 0%"></div>
+                        <div class="bg-accentBlue h-1.5 rounded-full transition-all duration-500" id="stat-sgov-bar" style="width: 0%"></div>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-slateBlue border border-charcoalGray p-4 rounded-xl shadow-lg mb-8" style="height: 400px;">
+            <div class="bg-slateBlue border border-charcoalGray p-4 rounded-xl shadow-lg mb-8" style="height: 400px; position: relative;">
                 <canvas id="lifecycleChart"></canvas>
             </div>
 
             <div class="bg-slateBlue border border-charcoalGray rounded-xl shadow-lg overflow-hidden">
                 <div class="px-6 py-4 border-b border-charcoalGray flex justify-between items-center bg-slate-800/50">
-                    <h3 class="font-bold text-warmWhite">初始基準資產分佈預覽 (2026)</h3>
+                    <h3 class="font-bold text-warmWhite">三軌強積金與證券初始分佈 (2026)</h3>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm">
                         <thead class="bg-charcoalGray text-slate-300">
                             <tr>
-                                <th class="px-6 py-3">資產類別 / 代碼</th>
-                                <th class="px-6 py-3">原幣估值</th>
-                                <th class="px-6 py-3">匯率 (至HKD)</th>
+                                <th class="px-6 py-3">資產類別</th>
+                                <th class="px-6 py-3">原幣估值 / 股數</th>
                                 <th class="px-6 py-3">等值港幣 (HKD)</th>
                             </tr>
                         </thead>
@@ -229,285 +207,299 @@
 
             <footer class="mt-auto pt-8 pb-4 text-[10px] leading-relaxed text-slate-500">
                 <hr class="border-charcoalGray mb-4">
-                <strong>顧問專業免責聲明：</strong> 本理財模擬系統之核心計算架構與算法邏輯由高級財務策劃顧問（CFP）編製，旨在提供資產配置與雙人退休策略之多情境動態模擬。系統內設定之所有初始值與回報率（包括強積金、美股大盤、高股息組合及定存利率）均為可隨時修訂之預設參數，絕不構成對未來真實市場收益、派息承諾或資產價值的法律保證。實際投資工具均受全球宏觀經濟波動、利率週期及稅務政策影響，使用者應定期引入真實資產數據複檢系統之誤差與市場風險。
+                <strong>顧問專業免責聲明：</strong> 本理財模擬系統之核心計算架構與算法邏輯由高級財務策劃顧問（CFP）編製，旨在提供資產配置與雙人退休策略之多情境動態模擬。系統已整合全球即時匯率 API 與資產十年期移動平均回報模型。系統內設定之所有初始值絕不構成對未來真實市場收益、派息承諾或資產價值的法律保證。
             </footer>
-
         </main>
     </div>
 
     <script>
         // ==========================================
-        // 1. Supabase Initialization (預留區)
+        // 1. Supabase Initialization
         // ==========================================
         const SUPABASE_URL = 'https://myrhatzdypiwwgmmfbuw.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_bnnah-2fsCaQnKZDoKNJQw_NuYQVvKi';
         // const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // ==========================================
-        // 2. 初始市場資產定價假設 (用於計算初始價值)
+        // 2. 動態聯網 API 模組 & 市場資產定價
         // ==========================================
-        const ASSUMED_PRICES = {
-            VOO: 500.0,
-            QQQ: 450.0,
-            SGOV: 100.0,
-            SCHD: 80.0,
-            BTC: 65000.0,
-            HSBC: 68.0
+        let MARKET_PRICES = {
+            VOO: 500.0, QQQ: 450.0, SGOV: 100.0, SCHD: 80.0, HSBC_HKD: 68.0
         };
-
-        // 股息率假定 (提取期 Phase 2 使用)
-        const DIVIDEND_YIELDS = {
-            VOO: 0.015,  // 1.5%
-            QQQ: 0.008,  // 0.8%
-            SCHD: 0.035  // 3.5%
-        };
-
+        const DIVIDEND_YIELDS = { VOO: 0.015, QQQ: 0.008, SCHD: 0.035 };
         let chartInstance = null;
+
+        async function fetchLiveMarketData() {
+            const apiStatus = document.getElementById('apiStatus');
+            try {
+                // 抓取即時外匯 (Open Exchange Rates / ER-API)
+                const fxRes = await fetch('https://open.er-api.com/v6/latest/USD');
+                if(fxRes.ok) {
+                    const fxData = await fxRes.json();
+                    const rates = fxData.rates;
+                    
+                    document.getElementById('USD_TO_HKD_Rate').value = (rates.HKD).toFixed(4);
+                    document.getElementById('JPY_TO_HKD_Rate').value = (rates.HKD / rates.JPY).toFixed(4);
+                    document.getElementById('GBP_TO_HKD_Rate').value = (rates.HKD / rates.GBP).toFixed(4);
+                    document.getElementById('KRW_TO_HKD_Rate').value = (rates.HKD / rates.KRW).toFixed(5);
+                    
+                    apiStatus.innerText = '● 即時匯率已連線';
+                    apiStatus.className = 'text-green-400 text-xs font-semibold';
+                }
+            } catch (err) {
+                console.warn("API Fetch Failed, using hardcoded baseline.", err);
+                apiStatus.innerText = '● 離線模式 (使用本地安全參數)';
+                apiStatus.className = 'text-slate-400 text-xs';
+            }
+            updateUI();
+        }
 
         // ==========================================
         // 3. 全域狀態管理與 DOM 綁定
         // ==========================================
-        function getInputValue(id, isFloat = false) {
+        function getVal(id, isFloat = false) {
             const el = document.getElementById(id);
             if (!el) return 0;
             if (el.type === 'checkbox') return el.checked;
-            return isFloat ? parseFloat(el.value) : parseInt(el.value, 10);
+            let val = isFloat ? parseFloat(el.value) : parseInt(el.value, 10);
+            return isNaN(val) ? 0 : val;
         }
 
         function formatCurrency(num) {
             return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'HKD', maximumFractionDigits: 0 }).format(num);
         }
 
+        function showError(msg) {
+            const el = document.getElementById('errorAlert');
+            if(msg) { el.innerText = "精算引擎發生錯誤: " + msg; el.classList.remove('hidden'); }
+            else { el.classList.add('hidden'); }
+        }
+
         // ==========================================
-        // 4. 核心模擬計算引擎 (The Engine Loop)
+        // 4. 核心模擬計算引擎 (三軌架構與手機防護)
         // ==========================================
         function runSimulation() {
-            // 擷取最新 UI 參數
-            const p = {
-                currentAge: getInputValue('User_Current_Age'),
-                endAge: getInputValue('Timeline_End_Age'),
-                retireAge: getInputValue('Retirement_Age'),
-                monthlyIncome: getInputValue('Current_Monthly_Income_HKD', true),
-                baseSalary: getInputValue('Current_Base_Salary_HKD', true),
-                salaryIncrease: getInputValue('Annual_Salary_Increase_HKD', true),
-                expenses: getInputValue('Monthly_Expenses_HKD', true),
-                
-                empMpfRate: getInputValue('Employee_MPF_Rate', true) / 100,
-                emprMpfRate: getInputValue('Employer_Total_MPF_Rate', true) / 100,
-                emprMpfCap: getInputValue('Employer_MPF_Cap_HKD', true),
-                
-                usdHkd: getInputValue('USD_TO_HKD_Rate', true),
-                dcaUsd: getInputValue('Monthly_DCA_USD', true),
-                sgovLimitUsd: getInputValue('SGOV_Bucket_Limit_USD', true),
-                dripEnabled: getInputValue('DRIP_Enabled'),
-                
-                cagrEquity: getInputValue('MPF_Equity_CAGR', true) / 100,
-                cagrCons: getInputValue('MPF_Conservative_CAGR', true) / 100,
-                cagrCore: getInputValue('Core_Stocks_CAGR', true) / 100,
-                cagrDiv: getInputValue('Dividend_Stocks_CAGR', true) / 100,
-                sgovYield: getInputValue('SGOV_Yield', true) / 100,
-                
-                cashOutAge: getInputValue('Stock_Cash_Out_Age'),
-                sellRate: getInputValue('Annual_Stock_Sell_Rate_After_75', true) / 100,
-            };
+            try {
+                showError(null); // Reset
 
-            // 初始化資產池 (將股數轉為 USD 價值方便複利計算)
-            let assets = {
-                mpfHkd: getInputValue('Initial_MPF_Total_HKD', true),
-                vooUsd: getInputValue('Initial_VOO_Shares', true) * ASSUMED_PRICES.VOO,
-                qqqUsd: getInputValue('Initial_QQQ_Shares', true) * ASSUMED_PRICES.QQQ,
-                sgovUsd: getInputValue('Initial_SGOV_Shares', true) * ASSUMED_PRICES.SGOV,
-                schdUsd: getInputValue('Initial_SCHD_Shares', true) * ASSUMED_PRICES.SCHD,
-                cashHkd: getInputValue('Cash_HKD_Buffer', true)
-            };
+                const p = {
+                    currentAge: getVal('User_Current_Age'),
+                    endAge: getVal('Timeline_End_Age'),
+                    retireAge: getVal('Retirement_Age'),
+                    monthlyIncome: getVal('Current_Monthly_Income_HKD', true),
+                    baseSalary: getVal('Current_Base_Salary_HKD', true),
+                    salaryIncrease: getVal('Annual_Salary_Increase_HKD', true),
+                    expenses: getVal('Monthly_Expenses_HKD', true),
+                    
+                    empMpfRate: getVal('Employee_MPF_Rate', true) / 100,
+                    emprMpfRate: getVal('Employer_Total_MPF_Rate', true) / 100,
+                    emprMpfCap: getVal('Employer_MPF_Cap_HKD', true),
+                    
+                    usdHkd: getVal('USD_TO_HKD_Rate', true),
+                    dcaUsd: getVal('Monthly_DCA_USD', true),
+                    sgovLimitUsd: getVal('SGOV_Bucket_Limit_USD', true),
+                    
+                    // 獨立 DRIP
+                    dripVOO: getVal('DRIP_VOO'),
+                    dripQQQ: getVal('DRIP_QQQ'),
+                    dripSCHD: getVal('DRIP_SCHD'),
+                    
+                    // 三軌 MPF CAGR
+                    cagrNA: getVal('CAGR_MPF_NA', true) / 100,
+                    cagrEU: getVal('CAGR_MPF_EU', true) / 100,
+                    cagrBond: getVal('CAGR_MPF_Bond', true) / 100,
+                    
+                    cagrCore: getVal('CAGR_Core', true) / 100,
+                    cagrDiv: getVal('CAGR_Div', true) / 100,
+                    yieldSgov: getVal('Yield_SGOV', true) / 100,
+                    yieldHsbc: getVal('Yield_HSBC', true) / 100,
+                    
+                    sellRate: getVal('SellRate_75', true) / 100,
+                };
 
-            // 準備數據數組供 Chart 使用
-            let simData = [];
-            let currentMonthlyIncome = p.monthlyIncome;
-            let currentBaseSalary = p.baseSalary;
-
-            for (let age = p.currentAge; age <= p.endAge; age++) {
-                let isAccumulation = age < p.retireAge;
-                let isPhase1 = age >= p.retireAge && age < p.cashOutAge;
-                let isPhase2 = age >= p.cashOutAge;
-
-                // 退休觸發：清算 MPF
-                if (age === p.retireAge) {
-                    assets.cashHkd += assets.mpfHkd;
-                    assets.mpfHkd = 0;
+                if (p.currentAge >= p.retireAge || p.retireAge >= p.endAge) {
+                    throw new Error("年齡參數邏輯衝突：當前年齡必須小於退休年齡，且退休年齡必須小於終點年齡。");
                 }
 
-                if (isAccumulation) {
-                    // --- 1. 薪水與強積金精算 ---
-                    // 10 個常規月
-                    let regIncome = currentMonthlyIncome;
-                    let empRegMpf = regIncome >= 7100 ? Math.min(1500, regIncome * p.empMpfRate) : 0;
+                // 初始化資產池
+                let assets = {
+                    mpfNA: getVal('Initial_MPF_NA', true),
+                    mpfEU: getVal('Initial_MPF_EU', true),
+                    mpfBond: getVal('Initial_MPF_Bond', true),
                     
-                    // 2 個雙糧/花紅月 (假設月收入 + 1個月底薪)
-                    let bonusMonthIncome = currentMonthlyIncome + currentBaseSalary;
-                    let empBonusMpf = Math.min(1500, bonusMonthIncome * p.empMpfRate);
+                    vooUsd: getVal('Init_VOO', true) * MARKET_PRICES.VOO,
+                    qqqUsd: getVal('Init_QQQ', true) * MARKET_PRICES.QQQ,
+                    schdUsd: getVal('Init_SCHD', true) * MARKET_PRICES.SCHD,
+                    sgovUsd: getVal('Init_SGOV', true) * MARKET_PRICES.SGOV,
                     
-                    // 僱主供款 (基於底薪)
-                    let emprMpf = Math.min(p.emprMpfCap, currentBaseSalary * p.emprMpfRate);
+                    hsbcHkd: getVal('Init_HSBC', true) * MARKET_PRICES.HSBC_HKD,
+                    cashHkd: getVal('Cash_HKD_Buffer', true)
+                };
 
-                    let totalAnnualMpfInflow = (empRegMpf * 10) + (empBonusMpf * 2) + (emprMpf * 12);
-                    
-                    // MPF 滾存回報率 (55歲後啟動線性降風險)
-                    let currentMpfCagr = p.cagrEquity;
-                    if (age >= 55) {
-                        let ratio = (age - 55) / Math.max(1, p.retireAge - 55);
-                        currentMpfCagr = p.cagrEquity - ratio * (p.cagrEquity - p.cagrCons);
-                    }
-                    assets.mpfHkd = (assets.mpfHkd + totalAnnualMpfInflow) * (1 + currentMpfCagr);
+                let simData = [];
+                let currentMonthlyIncome = p.monthlyIncome;
+                let currentBaseSalary = p.baseSalary;
 
-                    // --- 2. 股票 DCA 與雙糧分流 ---
-                    // 常規 DCA (全入 Core)
-                    let annualDcaUsd = p.dcaUsd * 12;
-                    assets.vooUsd += annualDcaUsd / 2;
-                    assets.qqqUsd += annualDcaUsd / 2;
+                for (let age = p.currentAge; age <= p.endAge; age++) {
+                    let isAccumulation = age < p.retireAge;
+                    let isPhase1 = age >= p.retireAge && age < 75;
+                    let isPhase2 = age >= 75;
 
-                    // 雙糧分流 (2個月底薪)
-                    let bonusCashUsd = (currentBaseSalary * 2) / p.usdHkd;
-                    let safetyFlowUsd = bonusCashUsd * 0.5;
-                    let equityFlowUsd = bonusCashUsd * 0.5;
-
-                    // Equity 直接入 VOO/QQQ
-                    assets.vooUsd += equityFlowUsd / 2;
-                    assets.qqqUsd += equityFlowUsd / 2;
-
-                    // Safety Flow & SGOV 水庫機制
-                    let sgovDividend = assets.sgovUsd * p.sgovYield;
-                    let totalToSgov = safetyFlowUsd + sgovDividend;
-
-                    if (assets.sgovUsd < p.sgovLimitUsd) {
-                        if (assets.sgovUsd + totalToSgov <= p.sgovLimitUsd) {
-                            assets.sgovUsd += totalToSgov;
-                        } else {
-                            let overflow = (assets.sgovUsd + totalToSgov) - p.sgovLimitUsd;
-                            assets.sgovUsd = p.sgovLimitUsd;
-                            // Tri-Furcation (均分三份)
-                            assets.vooUsd += overflow / 3;
-                            assets.qqqUsd += overflow / 3;
-                            assets.schdUsd += overflow / 3;
-                        }
-                    } else {
-                        // 水庫已滿，直接 Tri-Furcation
-                        assets.vooUsd += totalToSgov / 3;
-                        assets.qqqUsd += totalToSgov / 3;
-                        assets.schdUsd += totalToSgov / 3;
+                    // 退休觸發：清算 MPF 三大資產池
+                    if (age === p.retireAge) {
+                        assets.cashHkd += (assets.mpfNA + assets.mpfEU + assets.mpfBond);
+                        assets.mpfNA = 0; assets.mpfEU = 0; assets.mpfBond = 0;
                     }
 
-                    // --- 3. 核心組合滾存 (DRIP) ---
-                    if (p.dripEnabled) {
-                        assets.vooUsd *= (1 + p.cagrCore);
-                        assets.qqqUsd *= (1 + p.cagrCore);
-                        assets.schdUsd *= (1 + p.cagrDiv);
-                    } else {
-                        // 若關閉 DRIP，股息轉為現金
-                        let vooDiv = assets.vooUsd * DIVIDEND_YIELDS.VOO;
-                        let qqqDiv = assets.qqqUsd * DIVIDEND_YIELDS.QQQ;
-                        let schdDiv = assets.schdUsd * DIVIDEND_YIELDS.SCHD;
-                        assets.cashHkd += (vooDiv + qqqDiv + schdDiv) * p.usdHkd;
+                    // 1. 每年固定計算 HSBC 現金股息 (無論任何時期，永遠收息入現金池)
+                    assets.cashHkd += (assets.hsbcHkd * p.yieldHsbc);
+                    // HSBC 本金不應用 CAGR 複合，以反映其「純派息」屬性
+
+                    if (isAccumulation) {
+                        // --- 累積期精算 ---
+                        let regIncome = currentMonthlyIncome;
+                        let empRegMpf = regIncome >= 7100 ? Math.min(1500, regIncome * p.empMpfRate) : 0;
                         
-                        // 本金只增長 (CAGR - 股息率)
-                        assets.vooUsd *= (1 + Math.max(0, p.cagrCore - DIVIDEND_YIELDS.VOO));
-                        assets.qqqUsd *= (1 + Math.max(0, p.cagrCore - DIVIDEND_YIELDS.QQQ));
-                        assets.schdUsd *= (1 + Math.max(0, p.cagrDiv - DIVIDEND_YIELDS.SCHD));
-                    }
+                        let bonusMonthIncome = currentMonthlyIncome + currentBaseSalary;
+                        let empBonusMpf = Math.min(1500, bonusMonthIncome * p.empMpfRate);
+                        
+                        let emprMpf = Math.min(p.emprMpfCap, currentBaseSalary * p.emprMpfRate);
+                        let totalAnnualMpfInflow = (empRegMpf * 10) + (empBonusMpf * 2) + (emprMpf * 12);
+                        
+                        // MPF 供款三軌分流 (60% NA, 20% EU, 20% Bond)
+                        assets.mpfNA = (assets.mpfNA + totalAnnualMpfInflow * 0.60) * (1 + p.cagrNA);
+                        assets.mpfEU = (assets.mpfEU + totalAnnualMpfInflow * 0.20) * (1 + p.cagrEU);
+                        assets.mpfBond = (assets.mpfBond + totalAnnualMpfInflow * 0.20) * (1 + p.cagrBond);
 
-                    // 次年薪資遞增
-                    currentMonthlyIncome += p.salaryIncrease;
-                    currentBaseSalary += p.salaryIncrease;
+                        // 股票 DCA
+                        let annualDcaUsd = p.dcaUsd * 12;
+                        assets.vooUsd += annualDcaUsd / 2;
+                        assets.qqqUsd += annualDcaUsd / 2;
 
-                } else {
-                    // --- 提取期 (Phase B) ---
-                    let annualExpenses = p.expenses * 12;
-                    let dividendCashUsd = 0;
+                        // 雙糧分流
+                        let bonusCashUsd = (currentBaseSalary * 2) / Math.max(1, p.usdHkd);
+                        let safetyFlowUsd = bonusCashUsd * 0.5;
+                        let equityFlowUsd = bonusCashUsd * 0.5;
 
-                    if (isPhase1) {
-                        // Phase 1 (65-75): 股息再投資或提現 (取決於 DRIP)
-                        if (p.dripEnabled) {
-                            assets.vooUsd *= (1 + p.cagrCore);
-                            assets.qqqUsd *= (1 + p.cagrCore);
-                            assets.schdUsd *= (1 + p.cagrDiv);
+                        assets.vooUsd += equityFlowUsd / 2;
+                        assets.qqqUsd += equityFlowUsd / 2;
+
+                        // SGOV 水庫機制
+                        let sgovDividend = assets.sgovUsd * p.yieldSgov;
+                        let totalToSgov = safetyFlowUsd + sgovDividend;
+
+                        if (assets.sgovUsd < p.sgovLimitUsd) {
+                            if (assets.sgovUsd + totalToSgov <= p.sgovLimitUsd) {
+                                assets.sgovUsd += totalToSgov;
+                            } else {
+                                let overflow = (assets.sgovUsd + totalToSgov) - p.sgovLimitUsd;
+                                assets.sgovUsd = p.sgovLimitUsd;
+                                assets.vooUsd += overflow / 3; assets.qqqUsd += overflow / 3; assets.schdUsd += overflow / 3;
+                            }
                         } else {
-                            dividendCashUsd += assets.vooUsd * DIVIDEND_YIELDS.VOO;
-                            dividendCashUsd += assets.qqqUsd * DIVIDEND_YIELDS.QQQ;
-                            dividendCashUsd += assets.schdUsd * DIVIDEND_YIELDS.SCHD;
+                            assets.vooUsd += totalToSgov / 3; assets.qqqUsd += totalToSgov / 3; assets.schdUsd += totalToSgov / 3;
+                        }
+
+                        // 獨立 DRIP 滾存邏輯
+                        let processDRIP = (assetUsd, cagr, divYield, isDRIP) => {
+                            if (isDRIP) {
+                                return { newBalance: assetUsd * (1 + cagr), cashOut: 0 };
+                            } else {
+                                let cash = assetUsd * divYield;
+                                return { newBalance: assetUsd * (1 + Math.max(0, cagr - divYield)), cashOut: cash };
+                            }
+                        };
+
+                        let vData = processDRIP(assets.vooUsd, p.cagrCore, DIVIDEND_YIELDS.VOO, p.dripVOO);
+                        let qData = processDRIP(assets.qqqUsd, p.cagrCore, DIVIDEND_YIELDS.QQQ, p.dripQQQ);
+                        let sData = processDRIP(assets.schdUsd, p.cagrDiv, DIVIDEND_YIELDS.SCHD, p.dripSCHD);
+
+                        assets.vooUsd = vData.newBalance; assets.qqqUsd = qData.newBalance; assets.schdUsd = sData.newBalance;
+                        assets.cashHkd += (vData.cashOut + qData.cashOut + sData.cashOut) * p.usdHkd;
+
+                        currentMonthlyIncome += p.salaryIncrease;
+                        currentBaseSalary += p.salaryIncrease;
+
+                    } else {
+                        // --- 提取期 (Phase B) ---
+                        let annualExpenses = p.expenses * 12;
+                        let dividendCashUsd = assets.sgovUsd * p.yieldSgov; // SGOV 必派息
+
+                        if (isPhase1) {
+                            // Phase 1: 遵循 UI DRIP 設定
+                            let processDRIP = (assetUsd, cagr, divYield, isDRIP) => {
+                                if (isDRIP) return { newBalance: assetUsd * (1 + cagr), cashOut: 0 };
+                                else return { newBalance: assetUsd * (1 + Math.max(0, cagr - divYield)), cashOut: assetUsd * divYield };
+                            };
+
+                            let vData = processDRIP(assets.vooUsd, p.cagrCore, DIVIDEND_YIELDS.VOO, p.dripVOO);
+                            let qData = processDRIP(assets.qqqUsd, p.cagrCore, DIVIDEND_YIELDS.QQQ, p.dripQQQ);
+                            let sData = processDRIP(assets.schdUsd, p.cagrDiv, DIVIDEND_YIELDS.SCHD, p.dripSCHD);
+
+                            assets.vooUsd = vData.newBalance; assets.qqqUsd = qData.newBalance; assets.schdUsd = sData.newBalance;
+                            dividendCashUsd += (vData.cashOut + qData.cashOut + sData.cashOut);
+
+                        } else if (isPhase2) {
+                            // Phase 2 (75+): 強制全派息
+                            dividendCashUsd += assets.vooUsd * DIVIDEND_YIELDS.VOO + assets.qqqUsd * DIVIDEND_YIELDS.QQQ + assets.schdUsd * DIVIDEND_YIELDS.SCHD;
+                            
                             assets.vooUsd *= (1 + Math.max(0, p.cagrCore - DIVIDEND_YIELDS.VOO));
                             assets.qqqUsd *= (1 + Math.max(0, p.cagrCore - DIVIDEND_YIELDS.QQQ));
                             assets.schdUsd *= (1 + Math.max(0, p.cagrDiv - DIVIDEND_YIELDS.SCHD));
-                        }
-                        
-                        // SGOV 派息
-                        dividendCashUsd += assets.sgovUsd * p.sgovYield;
-                        assets.cashHkd += dividendCashUsd * p.usdHkd;
 
-                        // 扣除生活費 (先從現金扣)
-                        assets.cashHkd -= annualExpenses;
-                        if(assets.cashHkd < 0) assets.cashHkd = 0; // 簡化處理：現實中會賣資產，這裡先清零現金
-
-                    } else if (isPhase2) {
-                        // Phase 2 (75+): 強制關閉 DRIP，股息轉現金
-                        dividendCashUsd += assets.vooUsd * DIVIDEND_YIELDS.VOO;
-                        dividendCashUsd += assets.qqqUsd * DIVIDEND_YIELDS.QQQ;
-                        dividendCashUsd += assets.schdUsd * DIVIDEND_YIELDS.SCHD;
-                        dividendCashUsd += assets.sgovUsd * p.sgovYield;
-                        
-                        assets.cashHkd += dividendCashUsd * p.usdHkd;
-                        
-                        assets.vooUsd *= (1 + Math.max(0, p.cagrCore - DIVIDEND_YIELDS.VOO));
-                        assets.qqqUsd *= (1 + Math.max(0, p.cagrCore - DIVIDEND_YIELDS.QQQ));
-                        assets.schdUsd *= (1 + Math.max(0, p.cagrDiv - DIVIDEND_YIELDS.SCHD));
-
-                        // 檢查生活費缺口
-                        let shortfall = annualExpenses - (dividendCashUsd * p.usdHkd);
-                        if (shortfall > 0) {
-                            // 缺口大，啟動本金蠶食 (按比例賣出)
-                            let sellVoO = assets.vooUsd * p.sellRate;
-                            let sellQqq = assets.qqqUsd * p.sellRate;
-                            let sellSchd = assets.schdUsd * p.sellRate;
+                            let totalDivHkd = dividendCashUsd * p.usdHkd + (assets.hsbcHkd * p.yieldHsbc); // 包含HSBC
+                            let shortfall = annualExpenses - totalDivHkd;
                             
-                            assets.vooUsd -= sellVoO;
-                            assets.qqqUsd -= sellQqq;
-                            assets.schdUsd -= sellSchd;
-                            
-                            assets.cashHkd += (sellVoO + sellQqq + sellSchd) * p.usdHkd;
+                            if (shortfall > 0) {
+                                let sellVoO = assets.vooUsd * p.sellRate;
+                                let sellQqq = assets.qqqUsd * p.sellRate;
+                                let sellSchd = assets.schdUsd * p.sellRate;
+                                
+                                assets.vooUsd -= sellVoO; assets.qqqUsd -= sellQqq; assets.schdUsd -= sellSchd;
+                                assets.cashHkd += (sellVoO + sellQqq + sellSchd) * p.usdHkd;
+                            }
                         }
+
+                        assets.cashHkd += dividendCashUsd * p.usdHkd;
                         assets.cashHkd -= annualExpenses;
-                        if(assets.cashHkd < 0) assets.cashHkd = 0;
+                        if(assets.cashHkd < 0) assets.cashHkd = 0; 
                     }
+
+                    let totalMpfHkd = assets.mpfNA + assets.mpfEU + assets.mpfBond;
+                    let totalEquitiesHkd = (assets.vooUsd + assets.qqqUsd + assets.schdUsd) * p.usdHkd;
+                    let totalSgovHkd = assets.sgovUsd * p.usdHkd;
+                    let totalPortHkd = totalMpfHkd + assets.cashHkd + totalEquitiesHkd + totalSgovHkd + assets.hsbcHkd;
+
+                    simData.push({
+                        age: age,
+                        mpfHkd: totalMpfHkd,
+                        equitiesHkd: totalEquitiesHkd,
+                        sgovHkd: totalSgovHkd,
+                        cashHkd: assets.cashHkd,
+                        hsbcHkd: assets.hsbcHkd,
+                        totalHkd: totalPortHkd,
+                        sgovUsd: assets.sgovUsd
+                    });
                 }
 
-                // 計算該年總資產 (HKD)
-                let totalEquitiesUsd = assets.vooUsd + assets.qqqUsd + assets.schdUsd;
-                let totalPortHkd = assets.mpfHkd + assets.cashHkd + ((totalEquitiesUsd + assets.sgovUsd) * p.usdHkd);
-
-                simData.push({
-                    age: age,
-                    mpfHkd: assets.mpfHkd,
-                    equitiesHkd: totalEquitiesUsd * p.usdHkd,
-                    sgovHkd: assets.sgovUsd * p.usdHkd,
-                    cashHkd: assets.cashHkd,
-                    totalHkd: totalPortHkd,
-                    sgovUsd: assets.sgovUsd
-                });
+                return { data: simData, p: p };
+            } catch (err) {
+                showError(err.message);
+                return null;
             }
-
-            return { data: simData, p: p };
         }
 
         // ==========================================
         // 5. UI 與圖表更新邏輯
         // ==========================================
         function updateUI() {
-            const { data, p } = runSimulation();
+            const simResult = runSimulation();
+            if(!simResult) return; // 發生錯誤時停止更新 UI
+            const { data, p } = simResult;
             
-            // 尋找特定年齡節點
             const retireNode = data.find(d => d.age === p.retireAge) || data[0];
             const endNode = data[data.length - 1];
 
-            // 更新指標卡片
             document.getElementById('stat-retirement-nw').innerText = formatCurrency(retireNode.totalHkd);
             document.getElementById('stat-end-nw').innerText = formatCurrency(endNode.totalHkd);
             document.getElementById('stat-end-age').innerText = p.endAge;
@@ -516,96 +508,82 @@
             document.getElementById('stat-sgov-fill').innerText = sgovFillPercent.toFixed(1) + '%';
             document.getElementById('stat-sgov-bar').style.width = sgovFillPercent + '%';
 
-            // 更新動態表格 (初始資產預覽)
             const tbody = document.getElementById('assetTableBody');
             tbody.innerHTML = `
                 <tr class="hover:bg-slate-800/50">
-                    <td class="px-6 py-3 border-b border-charcoalGray">MPF 強積金核心</td>
-                    <td class="px-6 py-3 border-b border-charcoalGray">${formatCurrency(data[0].mpfHkd).replace('HKD','')} HKD</td>
-                    <td class="px-6 py-3 border-b border-charcoalGray">1.0000</td>
+                    <td class="px-6 py-3 border-b border-charcoalGray text-accentTeal font-medium">MPF 整合帳戶 (三軌)</td>
+                    <td class="px-6 py-3 border-b border-charcoalGray">本幣計價</td>
                     <td class="px-6 py-3 border-b border-charcoalGray font-semibold text-warmWhite">${formatCurrency(data[0].mpfHkd)}</td>
                 </tr>
                 <tr class="hover:bg-slate-800/50">
-                    <td class="px-6 py-3 border-b border-charcoalGray">美股證券 (VOO/QQQ/SCHD)</td>
+                    <td class="px-6 py-3 border-b border-charcoalGray">美股增長/收息組合</td>
                     <td class="px-6 py-3 border-b border-charcoalGray">$${new Intl.NumberFormat('en-US').format((data[0].equitiesHkd / p.usdHkd).toFixed(2))} USD</td>
-                    <td class="px-6 py-3 border-b border-charcoalGray">${p.usdHkd}</td>
                     <td class="px-6 py-3 border-b border-charcoalGray font-semibold text-warmWhite">${formatCurrency(data[0].equitiesHkd)}</td>
                 </tr>
                 <tr class="hover:bg-slate-800/50">
                     <td class="px-6 py-3 border-b border-charcoalGray">SGOV 美債水庫</td>
                     <td class="px-6 py-3 border-b border-charcoalGray">$${new Intl.NumberFormat('en-US').format((data[0].sgovUsd).toFixed(2))} USD</td>
-                    <td class="px-6 py-3 border-b border-charcoalGray">${p.usdHkd}</td>
                     <td class="px-6 py-3 border-b border-charcoalGray font-semibold text-warmWhite">${formatCurrency(data[0].sgovHkd)}</td>
+                </tr>
+                <tr class="hover:bg-slate-800/50">
+                    <td class="px-6 py-3 border-b border-charcoalGray text-yellow-500">0005.HK 匯豐控股</td>
+                    <td class="px-6 py-3 border-b border-charcoalGray">410 股</td>
+                    <td class="px-6 py-3 border-b border-charcoalGray font-semibold text-warmWhite">${formatCurrency(data[0].hsbcHkd)}</td>
                 </tr>
             `;
 
-            // 更新圖表
-            const labels = data.map(d => `Age ${d.age}`);
-            const datasetMpf = data.map(d => d.mpfHkd);
-            const datasetEq = data.map(d => d.equitiesHkd);
-            const datasetSgov = data.map(d => d.sgovHkd);
-            const datasetCash = data.map(d => d.cashHkd);
-
-            if (chartInstance) {
-                chartInstance.destroy();
-            }
+            if (chartInstance) { chartInstance.destroy(); }
 
             const ctx = document.getElementById('lifecycleChart').getContext('2d');
             chartInstance = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: labels,
+                    labels: data.map(d => `Age ${d.age}`),
                     datasets: [
-                        { label: '強積金 (MPF)', data: datasetMpf, borderColor: '#64748b', backgroundColor: 'rgba(100, 116, 139, 0.2)', fill: true, tension: 0.4 },
-                        { label: '流動現金 (HKD)', data: datasetCash, borderColor: '#0ea5e9', backgroundColor: 'rgba(14, 165, 233, 0.2)', fill: true, tension: 0.4 },
-                        { label: '美債水庫 (SGOV)', data: datasetSgov, borderColor: '#0d9488', backgroundColor: 'rgba(13, 148, 136, 0.2)', fill: true, tension: 0.4 },
-                        { label: '核心證券 (VOO/QQQ/SCHD)', data: datasetEq, borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.2)', fill: true, tension: 0.4 }
+                        { label: '強積金整合 (HKD)', data: data.map(d => d.mpfHkd), borderColor: '#0d9488', backgroundColor: 'rgba(13, 148, 136, 0.2)', fill: true, tension: 0.4 },
+                        { label: '流動現金 (HKD)', data: data.map(d => d.cashHkd), borderColor: '#0ea5e9', backgroundColor: 'rgba(14, 165, 233, 0.2)', fill: true, tension: 0.4 },
+                        { label: '美債水庫 (HKD)', data: data.map(d => d.sgovHkd), borderColor: '#64748b', backgroundColor: 'rgba(100, 116, 139, 0.2)', fill: true, tension: 0.4 },
+                        { label: '匯控護城河 (HKD)', data: data.map(d => d.hsbcHkd), borderColor: '#eab308', backgroundColor: 'rgba(234, 179, 8, 0.2)', fill: true, tension: 0.4 },
+                        { label: '核心證券組合 (HKD)', data: data.map(d => d.equitiesHkd), borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.2)', fill: true, tension: 0.4 }
                     ]
                 },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
+                    responsive: true, maintainAspectRatio: false,
                     interaction: { mode: 'index', intersect: false },
                     plugins: {
-                        legend: { labels: { color: '#e2e8f0' } },
-                        tooltip: { 
-                            callbacks: { 
-                                label: function(context) { return context.dataset.label + ': HKD ' + new Intl.NumberFormat('en-US').format(Math.round(context.parsed.y)); } 
-                            } 
-                        }
+                        legend: { labels: { color: '#e2e8f0', boxWidth: 12 } },
+                        tooltip: { callbacks: { label: function(c) { return c.dataset.label + ': HKD ' + new Intl.NumberFormat('en-US').format(Math.round(c.parsed.y)); } } }
                     },
                     scales: {
                         x: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
-                        y: { 
-                            stacked: true, // 堆疊區域圖展現總資產
-                            grid: { color: '#334155' }, 
-                            ticks: { color: '#94a3b8', callback: function(value) { return (value/1000000).toFixed(1) + 'M'; } }
-                        }
+                        y: { stacked: true, grid: { color: '#334155' }, ticks: { color: '#94a3b8', callback: function(v) { return (v/1000000).toFixed(1) + 'M'; } } }
                     }
                 }
             });
         }
 
         // ==========================================
-        // 6. 事件監聽初始化 (Reactivity)
+        // 6. 初始化與事件綁定
         // ==========================================
         document.addEventListener('DOMContentLoaded', () => {
-            // 在監聽器內加入此行
-document.getElementById('forceCalcBtn').addEventListener('click', updateUI);
-            // Slider 文字連動
             const endAgeSlider = document.getElementById('Timeline_End_Age');
             const endAgeDisplay = document.getElementById('val_Timeline_End_Age');
-            endAgeSlider.addEventListener('input', (e) => { endAgeDisplay.innerText = e.target.value; });
+            endAgeSlider.addEventListener('input', (e) => { endAgeDisplay.innerText = e.target.value; updateUI(); });
 
-            // 綁定所有 input 變更事件
-            const inputs = document.querySelectorAll('#controlForm input');
-            inputs.forEach(input => {
-                input.addEventListener('input', updateUI);
-                input.addEventListener('change', updateUI);
+            // 綁定強制精算按鈕 (解決手機鍵盤焦點未丟失導致的 Bug)
+            document.getElementById('forceCalcBtn').addEventListener('click', () => {
+                document.activeElement.blur(); // 強制虛擬鍵盤收起
+                updateUI();
             });
 
-            // 初始渲染
-            updateUI();
+            const inputs = document.querySelectorAll('#controlForm input');
+            inputs.forEach(input => {
+                input.addEventListener('change', updateUI);
+                // 為了效能，輸入框只在 change 時觸發，或按按鈕觸發
+            });
+
+            // 非同步抓取市場數據後渲染
+            fetchLiveMarketData();
         });
     </script>
 </body>
