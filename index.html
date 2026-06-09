@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lifecycle Simulator 2.0 - Pro Edition (Supabase Sync)</title>
+    <title>Lifecycle Simulator v2.2 - Pro Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -62,17 +62,27 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         #supabase-modal { display: none; }
         #supabase-modal.active { display: flex; }
+        .glass-select {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #e2e8f0;
+            border-radius: 4px;
+            padding: 6px 8px;
+            font-size: 0.75rem;
+            width: 100%;
+        }
+        .glass-select option { background: #1e1b4b; }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
+<!-- Supabase Modal (no login, URL+Key only) -->
 <div id="supabase-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm items-center justify-center">
     <div class="glass-panel p-6 w-full max-w-md space-y-4">
         <div class="flex justify-between items-center border-b border-white/10 pb-2">
-            <h2 class="text-xl font-bold text-emerald-400"><i class="fa-solid fa-database"></i> Supabase 連線與同步</h2>
+            <h2 class="text-xl font-bold text-emerald-400"><i class="fa-solid fa-database"></i> Supabase 連線設定</h2>
             <button onclick="toggleModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
         </div>
-        
         <div class="space-y-3">
             <div>
                 <label class="block text-xs text-gray-400 mb-1">Supabase URL</label>
@@ -82,36 +92,37 @@
                 <label class="block text-xs text-gray-400 mb-1">Supabase Anon Key</label>
                 <input type="password" id="supa-key" class="glass-input w-full rounded p-2 text-sm" placeholder="eyJh...">
             </div>
-            <hr class="border-white/10 my-2">
-            <p class="text-[10px] text-gray-400">由於資料庫啟用了 RLS (Row-Level Security)，請登入您的授權帳號：</p>
-            <div>
-                <label class="block text-xs text-gray-400 mb-1">Email</label>
-                <input type="email" id="supa-email" class="glass-input w-full rounded p-2 text-sm">
-            </div>
-            <div>
-                <label class="block text-xs text-gray-400 mb-1">Password</label>
-                <input type="password" id="supa-pass" class="glass-input w-full rounded p-2 text-sm">
-            </div>
-            <div id="supa-status" class="text-xs text-center font-bold"></div>
+            <div id="supa-modal-status" class="text-xs text-center font-bold min-h-[1.5rem]"></div>
         </div>
-
-        <div class="grid grid-cols-2 gap-3 mt-4">
-            <button onclick="supaLogin()" class="glass-btn w-full rounded py-2 text-sm font-bold text-blue-300"><i class="fa-solid fa-right-to-bracket"></i> 驗證登入</button>
-            <button onclick="supaRegister()" class="glass-btn w-full rounded py-2 text-sm font-bold text-purple-300"><i class="fa-solid fa-user-plus"></i> 註冊帳號</button>
-            <button onclick="saveToSupabase()" class="glass-btn w-full rounded py-2 text-sm font-bold text-emerald-300 col-span-1"><i class="fa-solid fa-cloud-arrow-up"></i> 儲存計劃</button>
-            <button onclick="loadFromSupabase()" class="glass-btn w-full rounded py-2 text-sm font-bold text-yellow-300 col-span-1"><i class="fa-solid fa-cloud-arrow-down"></i> 讀取計劃</button>
+        <div class="grid grid-cols-2 gap-3 mt-2">
+            <button onclick="connectSupabase()" class="glass-btn w-full rounded py-2 text-sm font-bold text-emerald-300 col-span-2"><i class="fa-solid fa-plug"></i> 連線 Supabase</button>
+            <button onclick="saveToSupabase()" class="glass-btn w-full rounded py-2 text-sm font-bold text-blue-300"><i class="fa-solid fa-cloud-arrow-up"></i> 雲端儲存</button>
+            <button onclick="loadFromSupabase()" class="glass-btn w-full rounded py-2 text-sm font-bold text-yellow-300"><i class="fa-solid fa-cloud-arrow-down"></i> 雲端讀取</button>
+        </div>
+        <div class="border-t border-white/10 pt-3">
+            <p class="text-[10px] text-gray-500">Supabase SQL（無需 Auth，使用 anon key 直接讀寫）：</p>
+            <pre class="text-[9px] text-gray-500 mt-1 bg-black/30 p-2 rounded overflow-x-auto">
+create table if not exists lifecycle_plan (
+  id bigint generated always as identity primary key,
+  created_at timestamptz default now(),
+  payload jsonb not null
+);
+-- 允許 anon 讀寫（單人使用，無 RLS）
+alter table lifecycle_plan enable row level security;
+create policy "allow_all" on lifecycle_plan for all using (true) with check (true);</pre>
         </div>
     </div>
 </div>
 
 <div class="max-w-7xl mx-auto space-y-6">
-    
+
+    <!-- Header -->
     <div class="flex flex-col md:flex-row justify-between items-center glass-panel p-4 px-6">
         <h1 class="text-2xl font-bold flex items-center gap-3">
             <i class="fa-solid fa-chart-line text-blue-400"></i>
-            Lifecycle Simulator <span class="text-sm font-normal text-blue-300 ml-2 border border-blue-400/30 px-2 py-0.5 rounded">v2.0 專業版</span>
+            Lifecycle Simulator <span class="text-sm font-normal text-blue-300 ml-2 border border-blue-400/30 px-2 py-0.5 rounded">v2.2 專業版</span>
         </h1>
-        <div class="flex items-center gap-4 mt-4 md:mt-0 text-sm">
+        <div class="flex items-center gap-4 mt-4 md:mt-0 text-sm flex-wrap">
             <div id="api-status" class="flex items-center gap-2 text-yellow-400">
                 <span class="loader"></span> 正在抓取市場即時數據...
             </div>
@@ -119,12 +130,17 @@
                 <span id="rate-ping" class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
                 <span>USD/HKD: <span id="display-rate" class="font-bold">7.80</span></span>
             </div>
+            <!-- Sync Status Indicator -->
+            <div id="sync-status" class="flex items-center gap-1 text-xs font-bold text-red-400 border-l border-white/20 pl-4">
+                <i class="fa-solid fa-cloud-xmark"></i> <span id="sync-label">未連線雲端同步</span>
+            </div>
             <button onclick="toggleModal()" class="glass-btn px-3 py-1.5 rounded text-emerald-400 text-xs font-bold flex items-center gap-2">
-                <i class="fa-solid fa-cloud"></i> 雲端同步
+                <i class="fa-solid fa-cloud"></i> 雲端設定
             </button>
         </div>
     </div>
 
+    <!-- Stats Row -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div class="glass-panel p-6 flex flex-col justify-center col-span-1 md:col-span-2">
             <h2 class="text-gray-400 text-sm mb-1">退休時點 (65歲) 總淨資產</h2>
@@ -133,35 +149,48 @@
                 <i class="fa-solid fa-arrow-trend-up"></i> 以實質購買力 (Real Purchasing Power) 呈現
             </div>
         </div>
-        
         <div class="glass-panel p-6 flex flex-col justify-center">
             <h2 class="text-gray-400 text-sm mb-1">終點 (90歲) 剩餘資產</h2>
             <div id="stat-90-total" class="text-2xl font-bold text-white mb-2">HK$0</div>
             <div class="text-gray-500 text-[10px]">已扣除通脹開支 (實質購買力)</div>
         </div>
-
         <div class="glass-panel p-6 flex flex-col justify-center">
             <div class="flex justify-between items-end mb-1">
-                <h2 class="text-gray-400 text-sm">90歲 剩餘現金/短債</h2>
+                <h2 class="text-gray-400 text-sm">90歲 剩餘安全資產</h2>
             </div>
             <div id="stat-safe" class="text-2xl font-bold text-blue-300 mb-2">HK$0</div>
-            <div class="text-gray-500 text-[10px]">高流動性防禦水庫 (實質購買力)</div>
+            <div class="text-gray-500 text-[10px]">HKD FD + USD FD + SGOV + 現金池 (實質)</div>
         </div>
     </div>
 
+    <!-- Chart -->
     <div class="glass-panel p-4 md:p-6">
         <div class="h-[400px] w-full">
             <canvas id="growthChart"></canvas>
         </div>
     </div>
 
+    <!-- Local Storage Buttons -->
+    <div class="glass-panel p-4 flex flex-wrap gap-3 items-center">
+        <span class="text-xs text-gray-400 font-bold"><i class="fa-solid fa-hard-drive mr-1"></i> 本機操作：</span>
+        <button onclick="saveLocal()" class="glass-btn px-4 py-1.5 rounded text-teal-300 text-xs font-bold flex items-center gap-2">
+            <i class="fa-solid fa-floppy-disk"></i> 本機儲存
+        </button>
+        <button onclick="loadLocal()" class="glass-btn px-4 py-1.5 rounded text-yellow-300 text-xs font-bold flex items-center gap-2">
+            <i class="fa-solid fa-folder-open"></i> 本機讀取
+        </button>
+        <span id="local-status" class="text-xs text-gray-400 ml-2"></span>
+    </div>
+
+    <!-- Main Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
+
+        <!-- Left Column -->
         <div class="space-y-6">
-            
+
+            <!-- Basic Settings -->
             <div class="glass-panel p-5">
-                <h3 class="text-lg font-semibold mb-4 border-b border-gray-600 pb-2 accent-text">基本設定 & 收入/通脹模型</h3>
-                
+                <h3 class="text-lg font-semibold mb-4 border-b border-gray-600 pb-2 accent-text">基本設定 &amp; 收入/通脹模型</h3>
                 <div class="grid grid-cols-2 gap-4 mb-4">
                     <div>
                         <label class="block text-xs text-gray-400 mb-1">當前年齡</label>
@@ -169,7 +198,8 @@
                     </div>
                     <div>
                         <label class="block text-xs text-gray-400 mb-1">預期通脹率 (%)</label>
-                        <input type="number" step="0.1" id="inp-inflation" class="glass-input w-full rounded p-2 text-sm text-red-300" value="3.0">
+                        <input type="number" step="0.1" id="inp-inflation" class="glass-input w-full rounded p-2 text-sm text-red-300" value="2.3">
+                        <p class="text-[9px] text-gray-500 mt-1">預設值為近10年平均通脹率，可自行修改</p>
                     </div>
                 </div>
 
@@ -207,11 +237,11 @@
                 </div>
             </div>
 
+            <!-- MPF -->
             <div class="glass-panel p-5">
                 <div class="flex justify-between items-end mb-4 border-b border-gray-600 pb-2">
                     <h3 class="text-lg font-semibold accent-text">滙豐強積金 MPF (HKD)</h3>
                 </div>
-                
                 <div class="grid grid-cols-3 gap-2 mb-4 bg-black/20 p-2 rounded-lg">
                     <div>
                         <label class="block text-[10px] text-gray-400 mb-1">僱員供款 (%)</label>
@@ -226,7 +256,6 @@
                         <input type="number" id="inp-mpf-er-cap" class="glass-input w-full rounded p-1 text-sm" value="3000">
                     </div>
                 </div>
-
                 <div class="space-y-3">
                     <div class="grid grid-cols-12 gap-2 items-end">
                         <div class="col-span-3 text-xs font-bold text-teal-400 pb-1.5 leading-tight">環球債券</div>
@@ -270,26 +299,64 @@
                 </div>
             </div>
 
+            <!-- Cash & Crypto (HKD Buffer removed) -->
             <div class="glass-panel p-5">
-                <h3 class="text-lg font-semibold mb-4 border-b border-gray-600 pb-2 accent-text">現金緩衝與加密資產</h3>
+                <h3 class="text-lg font-semibold mb-4 border-b border-gray-600 pb-2 accent-text">定期存款與加密資產</h3>
                 <div class="space-y-4">
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-[10px] text-gray-400 mb-1">初始港幣現金 (HKD Buffer)</label>
-                            <input type="number" id="inp-hkd-cash" class="glass-input w-full rounded p-1.5 text-sm" value="43205">
+
+                    <!-- USD FD - upgraded -->
+                    <div class="bg-black/20 p-3 rounded-lg border border-cyan-500/20">
+                        <h4 class="text-xs font-bold text-cyan-300 mb-3"><i class="fa-solid fa-dollar-sign mr-1"></i> 醫療儲備定期（USD）</h4>
+                        <div class="grid grid-cols-3 gap-2 mb-2">
+                            <div>
+                                <label class="block text-[10px] text-gray-400 mb-1">本金 (USD)</label>
+                                <input type="number" id="inp-usd-fd-amt" class="glass-input w-full rounded p-1.5 text-sm" value="80289">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-gray-400 mb-1">利率 (%)</label>
+                                <input type="number" step="0.1" id="inp-usd-fd-rate" class="glass-input w-full rounded p-1.5 text-sm" value="4.5">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-gray-400 mb-1">存期（年）</label>
+                                <input type="number" id="inp-usd-fd-term" class="glass-input w-full rounded p-1.5 text-sm" value="5">
+                            </div>
                         </div>
                         <div>
-                            <label class="block text-[10px] text-gray-400 mb-1">醫療儲備定期 (USD)</label>
-                            <input type="number" id="inp-usd-fd-amt" class="glass-input w-full rounded p-1.5 text-sm" value="80289">
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-3 gap-2">
-                         <div>
-                            <label class="block text-[10px] text-gray-400 mb-1">USD 定期利率(%)</label>
-                            <input type="number" step="0.1" id="inp-usd-fd-rate" class="glass-input w-full rounded p-1.5 text-sm" value="4.5">
+                            <label class="block text-[10px] text-gray-400 mb-1">到期處理</label>
+                            <select id="inp-usd-fd-action" class="glass-select" onchange="calculate()">
+                                <option value="renew">自動續期（預設）</option>
+                                <option value="cash">到期轉現金池</option>
+                            </select>
                         </div>
                     </div>
 
+                    <!-- HKD FD - new -->
+                    <div class="bg-black/20 p-3 rounded-lg border border-amber-500/20">
+                        <h4 class="text-xs font-bold text-amber-300 mb-3"><i class="fa-solid fa-building-columns mr-1"></i> 港幣定期（HKD）</h4>
+                        <div class="grid grid-cols-3 gap-2 mb-2">
+                            <div>
+                                <label class="block text-[10px] text-gray-400 mb-1">本金 (HKD)</label>
+                                <input type="number" id="inp-hkd-fd-amt" class="glass-input w-full rounded p-1.5 text-sm" value="0">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-gray-400 mb-1">利率 (%)</label>
+                                <input type="number" step="0.1" id="inp-hkd-fd-rate" class="glass-input w-full rounded p-1.5 text-sm" value="3.0">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-gray-400 mb-1">存期（年）</label>
+                                <input type="number" id="inp-hkd-fd-term" class="glass-input w-full rounded p-1.5 text-sm" value="1">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-gray-400 mb-1">到期處理</label>
+                            <select id="inp-hkd-fd-action" class="glass-select" onchange="calculate()">
+                                <option value="renew">自動續期（預設）</option>
+                                <option value="cash">到期轉現金池</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- BTC -->
                     <div class="bg-black/20 p-3 rounded-lg border border-yellow-500/30 relative overflow-hidden">
                         <div class="absolute right-[-10px] top-[-10px] opacity-10 text-6xl text-yellow-500"><i class="fa-brands fa-bitcoin"></i></div>
                         <div class="flex justify-between items-center mb-2 relative z-10">
@@ -312,8 +379,10 @@
 
         </div>
 
+        <!-- Right Column -->
         <div class="space-y-6">
-            
+
+            <!-- 75 Drawdown -->
             <div class="glass-panel p-5 bg-gradient-to-r from-red-900/20 to-transparent">
                 <h3 class="text-lg font-semibold mb-2 accent-text">75歲後證券消耗機制</h3>
                 <p class="text-[10px] text-gray-400 mb-3">75歲起，每年固定變賣剩餘證券組合的指定百分比，轉入現金池應付生活通脹。</p>
@@ -323,12 +392,12 @@
                 </div>
             </div>
 
+            <!-- Stocks -->
             <div class="glass-panel p-5">
                 <div class="flex justify-between items-end mb-4 border-b border-gray-600 pb-2">
                     <h3 class="text-lg font-semibold accent-text">證券組合 (股票/ETF)</h3>
                     <span class="text-[10px] text-gray-400">系統基於持股量與預設市值計算</span>
                 </div>
-                
                 <div class="grid grid-cols-12 gap-1 px-2 mb-2 text-[10px] text-gray-400 font-bold text-center">
                     <div class="col-span-2 text-left">代號</div>
                     <div class="col-span-2">持股量</div>
@@ -412,8 +481,23 @@
                         <div class="col-span-2 flex justify-center"><input type="checkbox" class="drip-checkbox inp-drip" checked></div>
                     </div>
                 </div>
-
             </div>
+
+            <!-- Changelog -->
+            <div class="glass-panel p-5 border border-blue-500/10">
+                <h3 class="text-sm font-bold text-blue-300 mb-3"><i class="fa-solid fa-list-check mr-1"></i> v2.2 更新內容</h3>
+                <ul class="text-[10px] text-gray-400 space-y-1 list-disc list-inside">
+                    <li>移除登入系統（無需 Email / Password）</li>
+                    <li>新增本機儲存 / 讀取</li>
+                    <li>新增同步狀態燈號（頂部右上角）</li>
+                    <li>新增 HKD 定期（含存期與到期處理）</li>
+                    <li>USD 定期支援存期 &amp; 到期轉現金池</li>
+                    <li>移除 HKD Buffer（退休前已消耗）</li>
+                    <li>通脹率預設改為 2.3%（香港近10年CPI均值）</li>
+                    <li>90歲安全資產涵蓋 HKD FD + USD FD + SGOV + 現金池</li>
+                </ul>
+            </div>
+
         </div>
     </div>
 </div>
@@ -422,61 +506,150 @@
     let myChart = null;
     let exchangeRate = 7.80;
     let supabaseClient = null;
-    
-    // Updated accurate default market prices (HKD for HSBC, USD for others)
+    let supaConnected = false;
+
     const marketPrices = {
         'BTC': 65000,
-        '0005.HK': 142.2, // Updated per user instruction
+        '0005.HK': 142.2,
         'VOO': 480.0,
         'QQQ': 440.0,
         'SCHD': 78.0,
         'SGOV': 100.5
     };
 
+    // ─── Sync Status ────────────────────────────────────────────────────────────
+    function setSyncStatus(state, msg) {
+        const el = document.getElementById('sync-status');
+        const label = document.getElementById('sync-label');
+        el.className = 'flex items-center gap-1 text-xs font-bold border-l border-white/20 pl-4';
+        if (state === 'ok') {
+            el.classList.add('text-green-400');
+            el.querySelector('i').className = 'fa-solid fa-cloud-check';
+        } else if (state === 'error') {
+            el.classList.add('text-red-400');
+            el.querySelector('i').className = 'fa-solid fa-cloud-xmark';
+        } else {
+            el.classList.add('text-yellow-400');
+            el.querySelector('i').className = 'fa-solid fa-cloud-arrow-up';
+        }
+        label.innerText = msg;
+    }
+
+    function flashSyncStatus(state, msg, revertMsg) {
+        setSyncStatus(state, msg);
+        setTimeout(() => setSyncStatus('ok', revertMsg || '雲端同步'), 3000);
+    }
+
+    // ─── Modal ───────────────────────────────────────────────────────────────────
     function toggleModal() {
         document.getElementById('supabase-modal').classList.toggle('active');
         document.getElementById('supa-url').value = localStorage.getItem('supaUrl') || '';
         document.getElementById('supa-key').value = localStorage.getItem('supaKey') || '';
     }
 
-    function initSupabase() {
-        const url = document.getElementById('supa-url').value;
-        const key = document.getElementById('supa-key').value;
-        if(url && key) {
-            localStorage.setItem('supaUrl', url);
-            localStorage.setItem('supaKey', key);
-            supabaseClient = supabase.createClient(url, key);
-            return true;
+    async function connectSupabase() {
+        const url = document.getElementById('supa-url').value.trim();
+        const key = document.getElementById('supa-key').value.trim();
+        const st = document.getElementById('supa-modal-status');
+        if (!url || !key) { st.innerHTML = '<span class="text-red-400">請填寫 URL 與 Anon Key</span>'; return; }
+        localStorage.setItem('supaUrl', url);
+        localStorage.setItem('supaKey', key);
+        supabaseClient = supabase.createClient(url, key);
+        // Test connection
+        try {
+            const { error } = await supabaseClient.from('lifecycle_plan').select('id').limit(1);
+            if (error) throw error;
+            supaConnected = true;
+            st.innerHTML = '<span class="text-green-400">✓ 連線成功</span>';
+            setSyncStatus('ok', '雲端同步');
+        } catch(e) {
+            supaConnected = false;
+            st.innerHTML = `<span class="text-red-400">連線失敗: ${e.message}</span>`;
+            setSyncStatus('error', '未連線雲端同步');
         }
-        return false;
     }
 
-    async function supaRegister() {
-        if(!initSupabase()) return alert('請填寫 URL 與 Key');
-        const email = document.getElementById('supa-email').value;
-        const pass = document.getElementById('supa-pass').value;
-        const { data, error } = await supabaseClient.auth.signUp({ email, password: pass });
-        const st = document.getElementById('supa-status');
-        if (error) { st.innerHTML = `<span class="text-red-400">${error.message}</span>`; } 
-        else { st.innerHTML = `<span class="text-green-400">註冊成功，請檢查Email或直接登入</span>`; }
+    // ─── Local Storage ───────────────────────────────────────────────────────────
+    function saveLocal() {
+        try {
+            localStorage.setItem('retirement-plan', JSON.stringify(getUIState()));
+            document.getElementById('local-status').innerText = '✓ 已儲存至本機';
+            document.getElementById('local-status').className = 'text-xs text-green-400 ml-2';
+            setTimeout(() => { document.getElementById('local-status').innerText = ''; }, 3000);
+        } catch(e) {
+            document.getElementById('local-status').innerText = '儲存失敗';
+            document.getElementById('local-status').className = 'text-xs text-red-400 ml-2';
+        }
     }
 
-    async function supaLogin() {
-        if(!initSupabase()) return alert('請填寫 URL 與 Key');
-        const email = document.getElementById('supa-email').value;
-        const pass = document.getElementById('supa-pass').value;
-        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password: pass });
-        const st = document.getElementById('supa-status');
-        if (error) { st.innerHTML = `<span class="text-red-400">登入失敗: ${error.message}</span>`; } 
-        else { st.innerHTML = `<span class="text-green-400">登入成功！ UID: ${data.user.id.substring(0,8)}...</span>`; }
+    function loadLocal() {
+        try {
+            const raw = localStorage.getItem('retirement-plan');
+            if (!raw) { document.getElementById('local-status').innerText = '找不到本機存檔'; return; }
+            setUIState(JSON.parse(raw));
+            document.getElementById('local-status').innerText = '✓ 已從本機讀取';
+            document.getElementById('local-status').className = 'text-xs text-green-400 ml-2';
+            setTimeout(() => { document.getElementById('local-status').innerText = ''; }, 3000);
+        } catch(e) {
+            document.getElementById('local-status').innerText = '讀取失敗';
+        }
     }
 
+    // ─── Supabase Cloud ──────────────────────────────────────────────────────────
+    async function saveToSupabase() {
+        const st = document.getElementById('supa-modal-status');
+        if (!supabaseClient) {
+            const url = localStorage.getItem('supaUrl');
+            const key = localStorage.getItem('supaKey');
+            if (url && key) supabaseClient = supabase.createClient(url, key);
+            else { st.innerHTML = '<span class="text-red-400">請先設定連線</span>'; return; }
+        }
+        const payload = getUIState();
+        try {
+            const { error } = await supabaseClient.from('lifecycle_plan').insert([{ payload }]);
+            if (error) throw error;
+            st.innerHTML = '<span class="text-green-400">已同步至雲端</span>';
+            flashSyncStatus('ok', '已同步至雲端', '雲端同步');
+        } catch(e) {
+            st.innerHTML = `<span class="text-red-400">雲端同步失敗</span>`;
+            setSyncStatus('error', '雲端同步失敗');
+        }
+    }
+
+    async function loadFromSupabase() {
+        const st = document.getElementById('supa-modal-status');
+        if (!supabaseClient) {
+            const url = localStorage.getItem('supaUrl');
+            const key = localStorage.getItem('supaKey');
+            if (url && key) supabaseClient = supabase.createClient(url, key);
+            else { st.innerHTML = '<span class="text-red-400">請先設定連線</span>'; return; }
+        }
+        try {
+            const { data, error } = await supabaseClient
+                .from('lifecycle_plan').select('payload').order('created_at', { ascending: false }).limit(1);
+            if (error) throw error;
+            if (data && data.length > 0) {
+                setUIState(data[0].payload);
+                st.innerHTML = '<span class="text-green-400">讀取成功!</span>';
+            } else {
+                st.innerHTML = '<span class="text-yellow-400">找不到存檔紀錄</span>';
+            }
+        } catch(e) {
+            st.innerHTML = `<span class="text-red-400">讀取失敗: ${e.message}</span>`;
+        }
+    }
+
+    // ─── State Getters/Setters ───────────────────────────────────────────────────
     function getUIState() {
         let state = {};
         document.querySelectorAll('input').forEach(inp => {
-            if (inp.id) state[inp.id] = parseFloat(inp.value) || 0;
+            if (inp.id) state[inp.id] = inp.type === 'checkbox' ? inp.checked : (parseFloat(inp.value) || 0);
         });
-        
+        // Capture selects
+        ['inp-usd-fd-action', 'inp-hkd-fd-action'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) state[id] = el.value;
+        });
         let stockState = {};
         document.querySelectorAll('.stock-row').forEach(row => {
             let ticker = row.getAttribute('data-ticker');
@@ -495,8 +668,11 @@
         if (!data) return;
         if (data.inputs) {
             for (let key in data.inputs) {
-                let el = document.getElementById(key);
-                if (el) el.value = data.inputs[key];
+                const el = document.getElementById(key);
+                if (!el) continue;
+                if (el.tagName === 'SELECT') el.value = data.inputs[key];
+                else if (el.type === 'checkbox') el.checked = data.inputs[key];
+                else el.value = data.inputs[key];
             }
         }
         if (data.stocks) {
@@ -514,70 +690,36 @@
         calculate();
     }
 
-    async function saveToSupabase() {
-        if(!supabaseClient) if(!initSupabase()) return alert('請先設定連線並登入');
-        const { data: { user } } = await supabaseClient.auth.getUser();
-        if(!user) return alert('儲存前請先登入');
-        
-        const payload = getUIState();
-        
-        // 1. Save Snapshot
-        const { error: err1 } = await supabaseClient.from('simulation_snapshots').insert([
-            { user_id: user.id, snapshot_name: 'Manual Save', payload: payload }
-        ]);
-
-        // 2. Upsert Current Profile (mapping to specific fields)
-        const simData = {
-            user_id: user.id, name: 'Main Plan',
-            current_year: new Date().getFullYear(),
-            user_current_age: payload.inputs['inp-age'],
-            retirement_age: payload.inputs['inp-retire-age'],
-            current_monthly_income_hkd: payload.inputs['inp-salary-total'],
-            current_base_salary_hkd: payload.inputs['inp-salary-base'],
-            annual_salary_increase_hkd: payload.inputs['inp-salary-raise'],
-            monthly_expenses_hkd: payload.inputs['inp-expense'],
-            employee_mpf_rate: payload.inputs['inp-mpf-emp-rate'] / 100,
-            employer_total_mpf_rate: payload.inputs['inp-mpf-er-rate'] / 100,
-            employer_mpf_cap_hkd: payload.inputs['inp-mpf-er-cap'],
-            cash_hkd_buffer: payload.inputs['inp-hkd-cash'],
-            medical_reserve_usd: payload.inputs['inp-usd-fd-amt'],
-            initial_btc_holdings: payload.inputs['inp-btc-qty'],
-            stock_cash_out_age: 75,
-            annual_stock_sell_rate_after_75: payload.inputs['inp-75-drawdown'] / 100
-        };
-
-        const { error: err2 } = await supabaseClient.from('retirement_simulations').upsert(simData, { onConflict: 'user_id' });
-        
-        const st = document.getElementById('supa-status');
-        if (err1 || err2) st.innerHTML = `<span class="text-red-400">儲存錯誤</span>`;
-        else st.innerHTML = `<span class="text-green-400">已成功儲存至 Supabase!</span>`;
-    }
-
-    async function loadFromSupabase() {
-        if(!supabaseClient) if(!initSupabase()) return alert('請先設定連線並登入');
-        const { data: { user } } = await supabaseClient.auth.getUser();
-        if(!user) return alert('讀取前請先登入');
-
-        const { data, error } = await supabaseClient
-            .from('simulation_snapshots')
-            .select('payload')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false })
-            .limit(1);
-            
-        if (data && data.length > 0) {
-            setUIState(data[0].payload);
-            document.getElementById('supa-status').innerHTML = `<span class="text-green-400">讀取成功!</span>`;
-        } else {
-            document.getElementById('supa-status').innerHTML = `<span class="text-yellow-400">找不到存檔紀錄</span>`;
-        }
-    }
-
+    // ─── Event Listeners ─────────────────────────────────────────────────────────
     document.querySelectorAll('input').forEach(input => {
         input.addEventListener('input', calculate);
     });
 
+    // ─── Init ─────────────────────────────────────────────────────────────────────
     async function initData() {
+        // Try restore Supabase connection silently
+        const savedUrl = localStorage.getItem('supaUrl');
+        const savedKey = localStorage.getItem('supaKey');
+        if (savedUrl && savedKey) {
+            supabaseClient = supabase.createClient(savedUrl, savedKey);
+            try {
+                const { error } = await supabaseClient.from('lifecycle_plan').select('id').limit(1);
+                if (!error) { supaConnected = true; setSyncStatus('ok', '雲端同步'); }
+                else { setSyncStatus('error', '未連線雲端同步'); }
+            } catch(e) { setSyncStatus('error', '未連線雲端同步'); }
+        } else {
+            setSyncStatus('error', '未連線雲端同步');
+        }
+
+        // Load from localStorage first
+        const savedPlan = localStorage.getItem('retirement-plan');
+        if (savedPlan) {
+            try { setUIState(JSON.parse(savedPlan)); } catch(e) { calculate(); }
+        } else {
+            calculate();
+        }
+
+        // Fetch exchange rate
         try {
             const res = await fetch('https://open.er-api.com/v6/latest/USD');
             const data = await res.json();
@@ -585,12 +727,13 @@
                 exchangeRate = data.rates.HKD;
                 document.getElementById('display-rate').innerText = exchangeRate.toFixed(4);
             }
-        } catch (e) { console.log('Using default exchange rate 7.8'); }
+        } catch(e) {}
 
+        // Fetch BTC price
         try {
             const btcRes = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
             const btcData = await btcRes.json();
-            if(btcData.bitcoin && btcData.bitcoin.usd) marketPrices['BTC'] = btcData.bitcoin.usd;
+            if (btcData.bitcoin && btcData.bitcoin.usd) marketPrices['BTC'] = btcData.bitcoin.usd;
         } catch(e) {}
 
         document.querySelectorAll('.api-price').forEach(el => {
@@ -601,24 +744,24 @@
             }
         });
         document.getElementById('api-status').innerHTML = `<i class="fa-solid fa-check text-green-400"></i> <span class="text-green-400">市值基準備妥</span>`;
-        
-        calculate(); 
+        calculate();
     }
 
     function getVal(id) { return parseFloat(document.getElementById(id).value) || 0; }
+    function getSelect(id) { const el = document.getElementById(id); return el ? el.value : 'renew'; }
 
+    // ─── Calculate ────────────────────────────────────────────────────────────────
     function calculate() {
-        // --- 1. Base Settings ---
         const age = getVal('inp-age');
         const retireAge = getVal('inp-retire-age');
         const endAge = 90;
         const targetExpense = getVal('inp-expense');
         const inflationRate = getVal('inp-inflation') / 100;
-        
+
         let salaryTotal = getVal('inp-salary-total');
         let salaryBase = getVal('inp-salary-base');
         const salaryMonths = getVal('inp-salary-months');
-        const salaryRaise = getVal('inp-salary-raise'); 
+        const salaryRaise = getVal('inp-salary-raise');
 
         const mpfEmpRate = getVal('inp-mpf-emp-rate') / 100;
         const mpfErRate = getVal('inp-mpf-er-rate') / 100;
@@ -634,18 +777,27 @@
         const cagrNa = getVal('inp-mpf-na-cagr') / 100;
         const cagrEu = getVal('inp-mpf-eu-cagr') / 100;
 
-        let hkdCashPool = getVal('inp-hkd-cash');
+        // No HKD Buffer; cash pool starts at 0
+        let hkdCashPool = 0;
+
+        // USD FD
         let usdFdBal = getVal('inp-usd-fd-amt');
         const usdFdRate = getVal('inp-usd-fd-rate') / 100;
-        
+        const usdFdTerm = getVal('inp-usd-fd-term') || 5;
+        const usdFdAction = getSelect('inp-usd-fd-action'); // 'renew' | 'cash'
+
+        // HKD FD
+        let hkdFdBal = getVal('inp-hkd-fd-amt');
+        const hkdFdRate = getVal('inp-hkd-fd-rate') / 100;
+        const hkdFdTerm = getVal('inp-hkd-fd-term') || 1;
+        const hkdFdAction = getSelect('inp-hkd-fd-action');
+
         let btcQty = getVal('inp-btc-qty');
         const btcCagr = getVal('inp-btc-cagr') / 100;
         const drawdown75Rate = getVal('inp-75-drawdown') / 100;
 
-        // Clone local copies for loop processing to strictly separate Prices vs Quantities
         let simPrices = { ...marketPrices };
         let simStocks = [];
-        
         document.querySelectorAll('.stock-row').forEach(row => {
             let t = row.getAttribute('data-ticker');
             simStocks.push({
@@ -656,59 +808,72 @@
                 cagr: (parseFloat(row.querySelector('.inp-cagr').value) || 0) / 100,
                 yield: (parseFloat(row.querySelector('.inp-yield').value) || 0) / 100,
                 drip: row.querySelector('.inp-drip').checked,
-                currentPrice: simPrices[t] || 100 
+                currentPrice: simPrices[t] || 100
             });
         });
 
         const labels = [];
-        const dataMpf = [];
-        const dataCash = [];
-        const dataBonds = [];
-        const dataStocks = [];
-        const dataCrypto = [];
+        const dataMpf = [], dataHkdFd = [], dataUsdFd = [], dataBonds = [], dataStocks = [], dataCrypto = [];
 
-        // --- Simulation Loop ---
+        // Track FD term cycles
+        let usdFdYearsSinceReset = 0;
+        let hkdFdYearsSinceReset = 0;
+        let usdFdPrincipal = usdFdBal; // track principal for term renewals
+
         for (let i = age; i <= endAge; i++) {
             const isRetired = i >= retireAge;
             const is75Rule = i >= 75;
             const yearIndex = i - age;
 
-            // Discount Factor to calculate Real Purchasing Power
             const discountFactor = Math.pow(1 + inflationRate, yearIndex);
-            
-            // Nominal expense required for the year
             let currentYearlyExpense = targetExpense * 12 * discountFactor;
             let expenseRemaining = isRetired ? currentYearlyExpense : 0;
 
-            // Grow FDs
+            // ── Grow FDs ──
             usdFdBal *= (1 + usdFdRate);
+            hkdFdBal *= (1 + hkdFdRate);
+            usdFdYearsSinceReset++;
+            hkdFdYearsSinceReset++;
 
-            // Accumulation
+            // USD FD term maturity
+            if (usdFdYearsSinceReset >= usdFdTerm) {
+                if (usdFdAction === 'cash') {
+                    hkdCashPool += usdFdBal * exchangeRate;
+                    usdFdBal = 0;
+                }
+                // else auto-renew: keep balance, reset counter
+                usdFdYearsSinceReset = 0;
+            }
+            // HKD FD term maturity
+            if (hkdFdYearsSinceReset >= hkdFdTerm) {
+                if (hkdFdAction === 'cash') {
+                    hkdCashPool += hkdFdBal;
+                    hkdFdBal = 0;
+                }
+                hkdFdYearsSinceReset = 0;
+            }
+
+            // ── Accumulation ──
             if (!isRetired) {
-                // MPF (assuming monthly increment)
                 const monthlyEmpNormal = Math.min(salaryTotal * mpfEmpRate, 1500);
                 const monthlyErNormal = Math.min(salaryBase * mpfErRate, mpfErCap);
                 const annualEmpMpf = (monthlyEmpNormal * 10) + (1500 * 2);
-                const annualErMpf = (monthlyErNormal * 10) + (Math.min(salaryBase*2*mpfErRate, mpfErCap) * 2);
+                const annualErMpf = (monthlyErNormal * 10) + (Math.min(salaryBase * 2 * mpfErRate, mpfErCap) * 2);
                 const totalAnnualMpf = annualEmpMpf + annualErMpf;
 
                 mpfBondBal += (totalAnnualMpf * allocBond);
                 mpfNaBal += (totalAnnualMpf * allocNa);
                 mpfEuBal += (totalAnnualMpf * allocEu);
 
-                // DCA (Increase Quantity, NOT value)
                 simStocks.forEach(stock => {
-                    if (stock.dca > 0) {
-                        stock.qty += (stock.dca * 12) / stock.currentPrice;
-                    }
+                    if (stock.dca > 0) stock.qty += (stock.dca * 12) / stock.currentPrice;
                 });
 
-                // Apply yearly salary raise (adds to monthly base)
                 salaryTotal += salaryRaise;
                 salaryBase += salaryRaise;
             }
 
-            // Market Growth (Compounding Prices & Balances)
+            // ── Market Growth ──
             mpfBondBal *= (1 + cagrBond);
             mpfNaBal *= (1 + cagrNa);
             mpfEuBal *= (1 + cagrEu);
@@ -722,8 +887,7 @@
             simStocks.forEach(stock => {
                 stock.currentPrice *= (1 + stock.cagr);
                 let dividendVal = stock.qty * stock.currentPrice * stock.yield;
-                
-                // 75 Drawdown Rule: Strictly reduce QTY
+
                 if (is75Rule) {
                     let sellQty = stock.qty * drawdown75Rate;
                     stock.qty -= sellQty;
@@ -739,18 +903,26 @@
                 }
             });
 
-            // Deduction Waterfall (From Nominal Values)
+            // ── Deduction Waterfall ──
+            // Order: 1. HKD Cash Pool → 2. HKD FD → 3. USD FD → 4. SGOV → 5. Stocks
             if (isRetired && expenseRemaining > 0) {
+                // 1. HKD Cash Pool
                 if (hkdCashPool > 0) {
                     let deduct = Math.min(expenseRemaining, hkdCashPool);
                     hkdCashPool -= deduct; expenseRemaining -= deduct;
                 }
+                // 2. HKD FD
+                if (expenseRemaining > 0 && hkdFdBal > 0) {
+                    let deduct = Math.min(expenseRemaining, hkdFdBal);
+                    hkdFdBal -= deduct; expenseRemaining -= deduct;
+                }
+                // 3. USD FD → convert at rate
                 if (expenseRemaining > 0 && usdFdBal > 0) {
                     let usdHkd = usdFdBal * exchangeRate;
                     let deductHkd = Math.min(expenseRemaining, usdHkd);
                     usdFdBal -= (deductHkd / exchangeRate); expenseRemaining -= deductHkd;
                 }
-                // SGOV as Safe fallback
+                // 4. SGOV
                 let sgov = simStocks.find(s => s.ticker === 'SGOV');
                 if (sgov && expenseRemaining > 0) {
                     let sgovHkd = sgov.qty * sgov.currentPrice * exchangeRate;
@@ -760,43 +932,60 @@
                         expenseRemaining -= deductHkd;
                     }
                 }
+                // 5. Remaining stocks (non-SGOV) - sell proportionally
+                if (expenseRemaining > 0) {
+                    simStocks.filter(s => s.ticker !== 'SGOV').forEach(stock => {
+                        if (expenseRemaining <= 0) return;
+                        let valHkd = stock.qty * stock.currentPrice * (stock.currency === 'USD' ? exchangeRate : 1);
+                        if (valHkd > 0) {
+                            let deductHkd = Math.min(expenseRemaining, valHkd);
+                            let ratio = deductHkd / valHkd;
+                            stock.qty *= (1 - ratio);
+                            expenseRemaining -= deductHkd;
+                        }
+                    });
+                }
             }
 
-            // Calculate Totals (Convert to REAL value by dividing discountFactor)
+            // ── Totals ──
             let n_Mpf = mpfBondBal + mpfNaBal + mpfEuBal;
-            let n_Cash = hkdCashPool + (usdFdBal * exchangeRate);
-            let n_Bonds = 0;
-            let n_Stocks = 0;
-            
+            let n_HkdFd = hkdFdBal;
+            let n_UsdFd = usdFdBal * exchangeRate;
+            let n_Bonds = 0, n_Stocks = 0;
+
             simStocks.forEach(s => {
                 let valHkd = s.qty * s.currentPrice * (s.currency === 'USD' ? exchangeRate : 1);
                 if (s.ticker === 'SGOV') n_Bonds += valHkd; else n_Stocks += valHkd;
             });
 
+            let n_Cash = hkdCashPool;
             let n_Crypto = btcQty * simPrices['BTC'] * exchangeRate;
 
             labels.push(i + '歲');
             dataMpf.push(n_Mpf / discountFactor);
-            dataCash.push(n_Cash / discountFactor);
+            dataHkdFd.push(n_HkdFd / discountFactor);
+            dataUsdFd.push(n_UsdFd / discountFactor);
             dataBonds.push(n_Bonds / discountFactor);
             dataStocks.push(n_Stocks / discountFactor);
             dataCrypto.push(n_Crypto / discountFactor);
 
-            let realNetWorth = (n_Mpf + n_Cash + n_Bonds + n_Stocks + n_Crypto) / discountFactor;
+            let realNetWorth = (n_Mpf + n_HkdFd + n_UsdFd + n_Cash + n_Bonds + n_Stocks + n_Crypto) / discountFactor;
 
             if (i === retireAge) {
                 document.getElementById('stat-65-total').innerText = 'HK$' + Math.round(realNetWorth).toLocaleString();
             }
             if (i === endAge) {
                 document.getElementById('stat-90-total').innerText = 'HK$' + Math.round(realNetWorth).toLocaleString();
-                document.getElementById('stat-safe').innerText = 'HK$' + Math.round((n_Cash + n_Bonds) / discountFactor).toLocaleString();
+                // Safe assets: HKD FD + USD FD + SGOV + Cash Pool
+                let safeAssets = (n_HkdFd + n_UsdFd + n_Bonds + n_Cash) / discountFactor;
+                document.getElementById('stat-safe').innerText = 'HK$' + Math.round(safeAssets).toLocaleString();
             }
         }
 
-        renderChart(labels, dataCash, dataBonds, dataMpf, dataStocks, dataCrypto);
+        renderChart(labels, dataMpf, dataHkdFd, dataUsdFd, dataBonds, dataStocks, dataCrypto);
     }
 
-    function renderChart(labels, cash, bonds, mpf, stocks, crypto) {
+    function renderChart(labels, mpf, hkdFd, usdFd, bonds, stocks, crypto) {
         const ctx = document.getElementById('growthChart').getContext('2d');
         if (myChart) myChart.destroy();
         myChart = new Chart(ctx, {
@@ -804,23 +993,24 @@
             data: {
                 labels: labels,
                 datasets: [
-                    { label: '現金儲備 (實質)', data: cash, borderColor: '#60a5fa', backgroundColor: 'rgba(96, 165, 250, 0.2)', fill: true, tension: 0.4 },
-                    { label: 'SGOV 短債 (實質)', data: bonds, borderColor: '#94a3b8', backgroundColor: 'rgba(148, 163, 184, 0.2)', fill: true, tension: 0.4 },
-                    { label: 'MPF (實質)', data: mpf, borderColor: '#2dd4bf', backgroundColor: 'rgba(45, 212, 191, 0.2)', fill: true, tension: 0.4 },
-                    { label: '證券組合 (實質)', data: stocks, borderColor: '#a78bfa', backgroundColor: 'rgba(167, 139, 250, 0.2)', fill: true, tension: 0.4 },
-                    { label: 'BTC (實質)', data: crypto, borderColor: '#eab308', backgroundColor: 'rgba(234, 179, 8, 0.2)', fill: true, tension: 0.4 }
+                    { label: 'MPF (實質)', data: mpf, borderColor: '#2dd4bf', backgroundColor: 'rgba(45,212,191,0.15)', fill: true, tension: 0.4 },
+                    { label: 'HKD FD (實質)', data: hkdFd, borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.15)', fill: true, tension: 0.4 },
+                    { label: 'USD FD (實質)', data: usdFd, borderColor: '#06b6d4', backgroundColor: 'rgba(6,182,212,0.15)', fill: true, tension: 0.4 },
+                    { label: 'SGOV 短債 (實質)', data: bonds, borderColor: '#94a3b8', backgroundColor: 'rgba(148,163,184,0.15)', fill: true, tension: 0.4 },
+                    { label: '股票 ETF (實質)', data: stocks, borderColor: '#a78bfa', backgroundColor: 'rgba(167,139,250,0.15)', fill: true, tension: 0.4 },
+                    { label: 'BTC (實質)', data: crypto, borderColor: '#eab308', backgroundColor: 'rgba(234,179,8,0.15)', fill: true, tension: 0.4 }
                 ]
             },
             options: {
                 responsive: true, maintainAspectRatio: false,
                 interaction: { mode: 'index', intersect: false },
                 scales: {
-                    x: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94a3b8', maxTicksLimit: 10 } },
-                    y: { stacked: true, grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94a3b8', callback: v => (v / 1000000).toFixed(1) + 'M' } }
+                    x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8', maxTicksLimit: 10 } },
+                    y: { stacked: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8', callback: v => (v / 1000000).toFixed(1) + 'M' } }
                 },
                 plugins: {
                     legend: { position: 'bottom', labels: { color: '#e2e8f0', usePointStyle: true, boxWidth: 8 } },
-                    tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.9)', titleColor: '#fff', bodyColor: '#cbd5e1', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1 }
+                    tooltip: { backgroundColor: 'rgba(15,23,42,0.9)', titleColor: '#fff', bodyColor: '#cbd5e1', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1 }
                 }
             }
         });
