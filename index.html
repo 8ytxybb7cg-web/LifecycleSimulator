@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>個人專屬退休財富模擬系統 Pro v4.2</title>
+    <title>個人專屬退休財富模擬系統 Pro v4.2 (3.0 收入模型恢復版)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -47,9 +47,9 @@
         <header class="glass-panel rounded-2xl p-4 mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
             <div>
                 <h1 class="text-xl md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-pink-400">
-                    個人專屬退休財富模擬系統 <span class="text-sm font-mono px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300">Pro v4.2</span>
+                    個人專屬退休財富模擬系統 <span class="text-sm font-mono px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300">Pro v4.2+</span>
                 </h1>
-                <p class="text-xs text-slate-400 mt-1">整合資產桶子提款策略、SGOV 專屬配置與動態安全底線精算</p>
+                <p class="text-xs text-slate-400 mt-1">結合 v3.0 完整勞動收入模型與 v4.2 動態提款策略</p>
             </div>
             
             <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto">
@@ -86,6 +86,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
             
             <div id="tab-home" class="lg:col-span-5 space-y-6">
+                
                 <div class="glass-panel rounded-2xl p-5">
                     <h2 class="text-base font-semibold text-indigo-300 mb-4 flex items-center gap-2">
                         <i class="fas fa-user"></i> 基本人口學與通脹設定
@@ -177,32 +178,87 @@
                     </div>
                 </div>
 
-                <div class="glass-panel rounded-2xl p-5">
-                    <h2 class="text-base font-semibold text-indigo-300 mb-4 flex items-center gap-2">
-                        <i class="fas fa-piggy-bank"></i> 強積金 (MPF) 與提取規劃
+                <div class="glass-panel rounded-2xl p-5 border border-teal-500/20 bg-gradient-to-br from-teal-950/10 to-transparent">
+                    <h2 class="text-base font-semibold text-teal-300 mb-4 flex items-center gap-2">
+                        <i class="fas fa-briefcase"></i> 勞動收入與強積金 (MPF) 設定
                     </h2>
                     <div class="space-y-4">
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-xs text-slate-400 mb-1">目前 MPF 結餘 (HKD)</label>
-                                <input type="number" id="mpf-bal" value="380000" class="w-full rounded-lg px-3 py-2 text-sm">
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <div class="col-span-2">
+                                <label class="block text-xs text-slate-400 mb-1">當前總月薪 (HKD)</label>
+                                <input type="number" id="salary-total" value="25000" class="w-full rounded-lg px-3 py-2 text-sm">
                             </div>
-                            <div>
-                                <label class="block text-xs text-slate-400 mb-1">預期年化回報 (%)</label>
-                                <input type="number" step="0.1" id="mpf-r" value="4.5" class="w-full rounded-lg px-3 py-2 text-sm">
+                            <div class="col-span-2">
+                                <label class="block text-xs text-slate-400 mb-1">當前底薪 (HKD) *供款基準</label>
+                                <input type="number" id="salary-base" value="23500" class="w-full rounded-lg px-3 py-2 text-sm">
+                            </div>
+                            <div class="col-span-2">
+                                <label class="block text-xs text-slate-400 mb-1">每年發放月數</label>
+                                <input type="number" step="0.5" id="salary-months" value="14" class="w-full rounded-lg px-3 py-2 text-sm">
+                            </div>
+                            <div class="col-span-2">
+                                <label class="block text-xs text-slate-400 mb-1">月薪每年固定增加 (HKD)</label>
+                                <input type="number" id="salary-raise" value="1200" class="w-full rounded-lg px-3 py-2 text-sm text-emerald-400">
                             </div>
                         </div>
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-xs text-slate-400 mb-1">每月供款 (自+僱, HKD)</label>
-                                <input type="number" id="mpf-contrib" value="3000" class="w-full rounded-lg px-3 py-2 text-sm">
+
+                        <div class="p-3 bg-slate-900/50 rounded-xl border border-slate-700/50 space-y-3">
+                            <span class="text-xs font-medium text-teal-400 block"><i class="fas fa-building"></i> 特殊供款比率與上限規則</span>
+                            <div class="grid grid-cols-3 gap-3">
+                                <div>
+                                    <label class="block text-[11px] text-slate-400 mb-1">僱員供款率 (%)</label>
+                                    <input type="number" step="0.1" id="emp-mpf-rate" value="5" class="w-full rounded-lg px-2.5 py-1.5 text-xs">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] text-slate-400 mb-1">僱主供款率 (%)</label>
+                                    <input type="number" step="0.1" id="er-mpf-rate" value="10" class="w-full rounded-lg px-2.5 py-1.5 text-xs">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] text-slate-400 mb-1">僱主上限 (HKD)</label>
+                                    <input type="number" id="er-mpf-max" value="3000" class="w-full rounded-lg px-2.5 py-1.5 text-xs">
+                                </div>
                             </div>
-                            <div>
-                                <label class="block text-xs text-slate-400 mb-1">特定提取月份設定</label>
-                                <select id="mpf-months" class="w-full rounded-lg px-3 py-2 text-sm">
-                                    <option value="fixed">固定於每年 2月 及 9月 提取</option>
-                                    <option value="monthly">平均每月提取</option>
-                                </select>
+                        </div>
+
+                        <div class="space-y-2">
+                            <div class="grid grid-cols-12 gap-2 items-end">
+                                <div class="col-span-3 text-xs font-bold text-teal-400 pb-1">環球債券</div>
+                                <div class="col-span-3">
+                                    <label class="block text-[10px] text-slate-400 mb-1">結餘</label>
+                                    <input type="number" id="mpf-bond-bal" value="200000" class="w-full rounded-lg px-2.5 py-1.5 text-xs">
+                                </div>
+                                <div class="col-span-3">
+                                    <label class="block text-[10px] text-slate-400 mb-1">未來分配 (%)</label>
+                                    <input type="number" id="mpf-bond-alloc" value="20" class="w-full rounded-lg px-2.5 py-1.5 text-xs">
+                                </div>
+                                <div class="col-span-3">
+                                    <label class="block text-[10px] text-slate-400 mb-1">CAGR (%)</label>
+                                    <input type="number" step="0.1" id="mpf-bond-cagr" value="2.5" class="w-full rounded-lg px-2.5 py-1.5 text-xs">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-12 gap-2 items-end">
+                                <div class="col-span-3 text-xs font-bold text-teal-400 pb-1">北美股票</div>
+                                <div class="col-span-3">
+                                    <input type="number" id="mpf-na-bal" value="400000" class="w-full rounded-lg px-2.5 py-1.5 text-xs">
+                                </div>
+                                <div class="col-span-3">
+                                    <input type="number" id="mpf-na-alloc" value="50" class="w-full rounded-lg px-2.5 py-1.5 text-xs">
+                                </div>
+                                <div class="col-span-3">
+                                    <input type="number" step="0.1" id="mpf-na-cagr" value="8.5" class="w-full rounded-lg px-2.5 py-1.5 text-xs">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-12 gap-2 items-end">
+                                <div class="col-span-3 text-xs font-bold text-teal-400 pb-1">歐洲股票</div>
+                                <div class="col-span-3">
+                                    <input type="number" id="mpf-eu-bal" value="241783" class="w-full rounded-lg px-2.5 py-1.5 text-xs">
+                                </div>
+                                <div class="col-span-3">
+                                    <input type="number" id="mpf-eu-alloc" value="30" class="w-full rounded-lg px-2.5 py-1.5 text-xs">
+                                </div>
+                                <div class="col-span-3">
+                                    <input type="number" step="0.1" id="mpf-eu-cagr" value="5.8" class="w-full rounded-lg px-2.5 py-1.5 text-xs">
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -249,9 +305,8 @@
                             <i class="fas fa-plus"></i> 新增項目
                         </button>
                     </div>
-                    
                     <div id="stock-list" class="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
-                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -291,7 +346,7 @@
                         <i class="fas fa-exclamation-triangle"></i> 各專屬資產桶子耗盡年齡預警
                     </h3>
                     <div id="depletion-container" class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
-                        </div>
+                    </div>
                 </div>
 
                 <div class="glass-panel rounded-2xl p-4 border border-teal-500/20 bg-teal-950/5">
@@ -299,7 +354,7 @@
                         <i class="fas fa-pie-chart"></i> 退休提款來源累計總額統計
                     </h3>
                     <div id="withdrawal-stats-container" class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                        </div>
+                    </div>
                 </div>
 
                 <div id="dwz-suggestion-panel" class="glass-panel rounded-2xl p-4 border border-pink-500/30 bg-pink-950/10 hidden">
@@ -334,7 +389,7 @@
                             </tr>
                         </thead>
                         <tbody id="ledger-body" class="text-slate-300 divide-y divide-slate-900/60">
-                            </tbody>
+                        </tbody>
                     </table>
                 </div>
             </div>
@@ -346,27 +401,16 @@
         let chartInstance = null;
         let supabaseClient = null;
         let supaConnected = false;
-        let viewMode = 'nominal'; // 'nominal' or 'real'
+        let viewMode = 'nominal';
         let globalSimulationData = [];
 
-        // Main static matrix for VHIS premium projection based on age brackets
         const vhisPremiumMatrix = [
-            { maxAge: 19, rate: 0.35 },
-            { maxAge: 29, rate: 0.45 },
-            { maxAge: 39, rate: 0.55 },
-            { maxAge: 44, rate: 0.68 },
-            { maxAge: 49, rate: 0.85 },
-            { maxAge: 54, rate: 1.10 },
-            { maxAge: 59, rate: 1.45 },
-            { maxAge: 64, rate: 1.95 },
-            { maxAge: 69, rate: 2.70 },
-            { maxAge: 74, rate: 3.80 },
-            { maxAge: 79, rate: 5.20 },
-            { maxAge: 84, rate: 7.50 },
+            { maxAge: 19, rate: 0.35 }, { maxAge: 29, rate: 0.45 }, { maxAge: 39, rate: 0.55 }, { maxAge: 44, rate: 0.68 },
+            { maxAge: 49, rate: 0.85 }, { maxAge: 54, rate: 1.10 }, { maxAge: 59, rate: 1.45 }, { maxAge: 64, rate: 1.95 },
+            { maxAge: 69, rate: 2.70 }, { maxAge: 74, rate: 3.80 }, { maxAge: 79, rate: 5.20 }, { maxAge: 84, rate: 7.50 },
             { maxAge: 100, rate: 11.50 }
         ];
 
-        // Default layout mapping for stocks array
         let initialStocks = [
             { category: "股票ETF", price: 142, qty: 410, cagr: 4.0, div: 5.5, pmt: 0, drip: false },
             { category: "SGOV／短期美債", price: 100, qty: 500, cagr: 0.0, div: 4.2, pmt: 0, drip: true },
@@ -374,18 +418,15 @@
         ];
 
         function initUI() {
-            // Restore default stock configuration layout
             const container = document.getElementById('stock-list');
             container.innerHTML = '';
             initialStocks.forEach(s => addStockRow(s));
             
-            // Setup listener components to trigger autosave/re-calculation
             const inputs = document.querySelectorAll('#tab-home input, #tab-home select');
             inputs.forEach(input => {
                 input.addEventListener('input', () => runSimulation(false));
             });
 
-            // Load credentials if present inside local cache storage
             const url = localStorage.getItem('supaUrl');
             const key = localStorage.getItem('supaKey');
             if(url && key) {
@@ -453,8 +494,6 @@
                     </div>
                 </div>
             `;
-            
-            // Add change listener mappings to trigger math pipelines 
             div.querySelectorAll('input').forEach(i => i.addEventListener('input', () => runSimulation(false)));
             container.appendChild(div);
             runSimulation(false);
@@ -479,7 +518,7 @@
         function getVhisPremium(age, basePremium) {
             const matched = vhisPremiumMatrix.find(b => age <= b.maxAge);
             const multiplier = matched ? matched.rate : 11.50;
-            return basePremium * multiplier * 12; 
+            return basePremium * multiplier * 12;
         }
 
         function collectStateObject() {
@@ -511,10 +550,28 @@
                 fdUsdR: parseFloat(document.getElementById('fd-usd-r').value) || 0,
                 cashPool: parseFloat(document.getElementById('cash-pool').value) || 0,
                 fdStrategy: document.getElementById('fd-strategy').value,
-                mpfBal: parseFloat(document.getElementById('mpf-bal').value) || 0,
-                mpfR: parseFloat(document.getElementById('mpf-r').value) || 0,
-                mpfContrib: parseFloat(document.getElementById('mpf-contrib').value) || 0,
-                mpfMonths: document.getElementById('mpf-months').value,
+                
+                // 3.0 Income & MPF Restored Params
+                salaryTotal: parseFloat(document.getElementById('salary-total').value) || 0,
+                salaryBase: parseFloat(document.getElementById('salary-base').value) || 0,
+                salaryMonths: parseFloat(document.getElementById('salary-months').value) || 0,
+                salaryRaise: parseFloat(document.getElementById('salary-raise').value) || 0,
+                empMpfRate: parseFloat(document.getElementById('emp-mpf-rate').value) || 0,
+                erMpfRate: parseFloat(document.getElementById('er-mpf-rate').value) || 0,
+                erMpfMax: parseFloat(document.getElementById('er-mpf-max').value) || 0,
+                
+                mpfBondBal: parseFloat(document.getElementById('mpf-bond-bal').value) || 0,
+                mpfBondAlloc: parseFloat(document.getElementById('mpf-bond-alloc').value) || 0,
+                mpfBondCagr: parseFloat(document.getElementById('mpf-bond-cagr').value) || 0,
+                
+                mpfNaBal: parseFloat(document.getElementById('mpf-na-bal').value) || 0,
+                mpfNaAlloc: parseFloat(document.getElementById('mpf-na-alloc').value) || 0,
+                mpfNaCagr: parseFloat(document.getElementById('mpf-na-cagr').value) || 0,
+                
+                mpfEuBal: parseFloat(document.getElementById('mpf-eu-bal').value) || 0,
+                mpfEuAlloc: parseFloat(document.getElementById('mpf-eu-alloc').value) || 0,
+                mpfEuCagr: parseFloat(document.getElementById('mpf-eu-cagr').value) || 0,
+
                 withdrawalStrategy: document.getElementById('withdrawal-strategy').value,
                 dwzSafetyFloor: parseFloat(document.getElementById('dwz-safety-floor').value) || 1500000,
                 dwzEnable: document.getElementById('dwz-enable').value === 'true',
@@ -524,86 +581,104 @@
 
         function runSimulation(isFirstLoad = false) {
             const p = collectStateObject();
-            
-            // Input Validation Bounds
             if(p.currAge >= 100 || p.currAge >= p.retireAge) {
-                return; 
+                return;
             }
 
             let timeline = [];
-            
-            // Initialization variables matching exact ledger requirements
             let cash = p.cashPool;
             let fdHkd = p.fdHkdP;
             let fdUsd = p.fdUsdP;
-            let mpf = p.mpfBal;
             
-            // Deep clone active securities matrix arrays
-            let trackingStocks = p.stocks.map(s => ({...s}));
+            let annualSalaryTotal = p.salaryTotal;
+            let annualSalaryBase = p.salaryBase;
+            let mpfBond = p.mpfBondBal;
+            let mpfNa = p.mpfNaBal;
+            let mpfEu = p.mpfEuBal;
+            let mpf = 0; // The consolidated MPF Bucket for post-retirement
 
-            // Tracks depletion milestones across age groups
+            let trackingStocks = p.stocks.map(s => ({...s}));
             let depletionAges = {
                 cash: null, sgov: null, fdHkd: null, fdUsd: null, mpf: null, securities: null, btc: null
             };
-
-            // Cumulative withdrawal stats tracks
             let withdrawalStats = {
                 cash: 0, sgov: 0, fdHkd: 0, fdUsd: 0, mpf: 0, securities: 0, btc: 0
             };
-
+            
             let accumInflationMultiplier = 1.0;
             let accumMedicalInflationMultiplier = 1.0;
 
-            // Pre-calculation asset detection flag check
             let hasSgov = trackingStocks.some(s => s.category === 'SGOV／短期美債');
             let hasSecurities = trackingStocks.some(s => s.category !== 'SGOV／短期美債' && s.category !== '加密貨幣');
             let hasBtc = trackingStocks.some(s => s.category === '加密貨幣');
 
-            // Set up active depletion state indicators (0 means not depleted/active, 1 means depleted)
-            let sgovDepletedMark = !hasSgov ? 1 : 0;
-            let securitiesDepletedMark = !hasSecurities ? 1 : 0;
-            let btcDepletedMark = !hasBtc ? 1 : 0;
-
             let age90NominalAsset = 0;
 
-            // Main Core Simulation Loop (Yearly Step iteration)
             for (let age = p.currAge; age <= 100; age++) {
                 let isRetired = age >= p.retireAge;
+                
+                // 3.0 退休轉換：將 3 項 MPF 基金合併轉入 Bucket 提款池
+                if (age === p.retireAge) {
+                    mpf = mpfBond + mpfNa + mpfEu;
+                    mpfBond = 0; 
+                    mpfNa = 0; 
+                    mpfEu = 0;
+                }
 
                 // 1. Incomes / Compounding / Contribution Phases
                 if (!isRetired) {
-                    // Accumulate parameters prior to retirement age boundary
-                    mpf = (mpf + (p.mpfContrib * 12)) * (1 + p.mpfR / 100);
-                    
+                    // 恢復 v3.0：勞動收入與強積金實際供款
+                    let yearlyEmpContribution = annualSalaryTotal * (p.empMpfRate / 100) * 12;
+                    let yearlyErContribution = Math.min(annualSalaryBase * (p.erMpfRate / 100), p.erMpfMax) * 12;
+                    let totalMpfYearly = yearlyEmpContribution + yearlyErContribution;
+
+                    // 三大子基金配置與增長
+                    mpfBond = (mpfBond + totalMpfYearly * (p.mpfBondAlloc / 100)) * (1 + p.mpfBondCagr / 100);
+                    mpfNa = (mpfNa + totalMpfYearly * (p.mpfNaAlloc / 100)) * (1 + p.mpfNaCagr / 100);
+                    mpfEu = (mpfEu + totalMpfYearly * (p.mpfEuAlloc / 100)) * (1 + p.mpfEuCagr / 100);
+
+                    // 扣除 MPF 供款後的淨收入注入現金池
+                    let netSalaryYearly = (annualSalaryTotal * p.salaryMonths) - yearlyEmpContribution;
+                    cash += netSalaryYearly;
+
                     // Fixed Deposit compound strategies
                     fdHkd = fdHkd * (1 + p.fdHkdR / 100);
                     fdUsd = fdUsd * (1 + p.fdUsdR / 100);
 
-                    // Routine Monthly Securities Injections
+                    // Routine Monthly Securities Injections (DCA 扣除機制)
                     trackingStocks.forEach(s => {
                         let yearlyInvestment = s.pmt * 12;
+                        // v3.0 邏輯：從現金池中扣除月供款，若不足則將現金池梭哈
+                        if (cash >= yearlyInvestment) {
+                            cash -= yearlyInvestment;
+                        } else {
+                            yearlyInvestment = cash;
+                            cash = 0;
+                        }
+                        
                         let totalVal = s.qty * s.price + yearlyInvestment;
-                        // Compound Growth
                         totalVal = totalVal * (1 + s.cagr / 100);
-                        // Dividends Allocation
                         let dividendPay = totalVal * (s.div / 100);
                         if (s.drip) {
                             totalVal += dividendPay;
                         } else {
-                            cash += dividendPay; // Non-DRIP flows straight back inside primary liquidity pool
+                            cash += dividendPay;
                         }
                         s.qty = totalVal / s.price;
                     });
+                    
+                    // 下年度人工增長
+                    annualSalaryBase += p.salaryRaise;
+                    annualSalaryTotal += p.salaryRaise;
                 } else {
                     // Post-Retirement Compounding Phase
-                    mpf = mpf * (1 + p.mpfR / 100);
-                    
                     if (p.fdStrategy === 'keep') {
                         fdHkd = fdHkd * (1 + p.fdHkdR / 100);
                         fdUsd = fdUsd * (1 + p.fdUsdR / 100);
                     }
 
-                    // Post retirement compounding for equities without active monthly injections
+                    // MPF Bucket 保留作為提款池，不再具備單一高息增長 (無額外 CAGR 參數)
+                    
                     trackingStocks.forEach(s => {
                         let totalVal = s.qty * s.price;
                         totalVal = totalVal * (1 + s.cagr / 100);
@@ -624,7 +699,7 @@
                 let targetTargetLiability = yearlyBaseExpense + yearlyVhisPremium;
                 let remainingLiability = targetTargetLiability;
 
-                // 3. Bucket Sequential Decumulation Algorithm Execution
+                // 3. Bucket Sequential Decumulation Algorithm Execution (v4.2 提款池順序)
                 if (isRetired && remainingLiability > 0) {
                     
                     // Bucket 1: Cash Pool Execution
@@ -686,7 +761,7 @@
                         }
                     }
 
-                    // Bucket 3: MPF Retirement Pool Extraction
+                    // Bucket 3: Consolidated MPF Retirement Pool Extraction (Mapped)
                     if (remainingLiability > 0) {
                         if (mpf >= remainingLiability) {
                             withdrawalStats.mpf += remainingLiability;
@@ -700,11 +775,10 @@
                         }
                     }
 
-                    // Bucket 4: Regular Equities (Stock ETF / Dividend ETF / Individual Stocks)
+                    // Bucket 4: Regular Equities
                     if (remainingLiability > 0) {
                         let standardSecurities = trackingStocks.filter(s => s.category !== 'SGOV／短期美債' && s.category !== '加密貨幣');
                         let totalSecuritiesVal = standardSecurities.reduce((acc, curr) => acc + (curr.qty * curr.price), 0);
-
                         if (totalSecuritiesVal >= remainingLiability) {
                             withdrawalStats.securities += remainingLiability;
                             let ratioToExtract = remainingLiability / totalSecuritiesVal;
@@ -726,7 +800,6 @@
                     if (remainingLiability > 0) {
                         let cryptoAssets = trackingStocks.filter(s => s.category === '加密貨幣');
                         let totalCryptoVal = cryptoAssets.reduce((acc, curr) => acc + (curr.qty * curr.price), 0);
-
                         if (totalCryptoVal >= remainingLiability) {
                             withdrawalStats.btc += remainingLiability;
                             let ratioToExtract = remainingLiability / totalCryptoVal;
@@ -745,19 +818,18 @@
                     }
                 }
 
-                // Check post-decumulation flag statuses to flag instant depletion ages if zero and untouched above
+                let currentMpfSum = mpf + mpfBond + mpfNa + mpfEu; // 整合退休前三子基金與退休後的 MPF Bucket
+
                 if (isRetired) {
                     if (cash === 0 && depletionAges.cash === null) depletionAges.cash = age;
                     let sgovAsset = trackingStocks.find(s => s.category === 'SGOV／短期美債');
                     if ((!sgovAsset || sgovAsset.qty <= 0) && depletionAges.sgov === null && hasSgov) depletionAges.sgov = age;
                     if (fdHkd === 0 && depletionAges.fdHkd === null) depletionAges.fdHkd = age;
                     if (fdUsd === 0 && depletionAges.fdUsd === null) depletionAges.fdUsd = age;
-                    if (mpf === 0 && depletionAges.mpf === null) depletionAges.mpf = age;
-                    
+                    if (currentMpfSum === 0 && depletionAges.mpf === null) depletionAges.mpf = age;
                     let standardSecurities = trackingStocks.filter(s => s.category !== 'SGOV／短期美債' && s.category !== '加密貨幣');
                     let currentSecuritiesVal = standardSecurities.reduce((acc, curr) => acc + (curr.qty * curr.price), 0);
                     if (currentSecuritiesVal === 0 && depletionAges.securities === null && hasSecurities) depletionAges.securities = age;
-                    
                     let cryptoAssets = trackingStocks.filter(s => s.category === '加密貨幣');
                     let currentCryptoVal = cryptoAssets.reduce((acc, curr) => acc + (curr.qty * curr.price), 0);
                     if (currentCryptoVal === 0 && depletionAges.btc === null && hasBtc) depletionAges.btc = age;
@@ -767,9 +839,9 @@
                 let currentSecuritiesSum = trackingStocks.filter(s => s.category !== '加密貨幣').reduce((acc, curr) => acc + (curr.qty * curr.price), 0);
                 let currentCryptoSum = trackingStocks.filter(s => s.category === '加密貨幣').reduce((acc, curr) => acc + (curr.qty * curr.price), 0);
                 
-                let nominalTotal = cash + fdHkd + fdUsd + mpf + currentSecuritiesSum + currentCryptoSum;
+                let nominalTotal = cash + fdHkd + fdUsd + currentMpfSum + currentSecuritiesSum + currentCryptoSum;
                 let realTotal = nominalTotal / accumInflationMultiplier;
-
+                
                 if (age === 90) {
                     age90NominalAsset = nominalTotal;
                 }
@@ -781,26 +853,22 @@
                     cash: cash,
                     fdHkd: fdHkd,
                     fdUsd: fdUsd,
-                    mpf: mpf,
+                    mpf: currentMpfSum,
                     securities: currentSecuritiesSum,
                     crypto: currentCryptoSum,
                     exp: targetTargetLiability,
                     vhis: yearlyVhisPremium
                 });
-
-                // Advance multipliers for future calculations 
+                
                 accumInflationMultiplier *= (1 + p.genInf / 100);
                 accumMedicalInflationMultiplier *= (1 + p.medInf / 100);
             }
 
             globalSimulationData = timeline;
-
-            // Render Output Visual elements and dynamic summaries
             updateMetricsDashboard(timeline, depletionAges, withdrawalStats, p, age90NominalAsset);
             updateChartVisualization();
             populateLedgerTable(timeline);
 
-            // Silent execution configuration wrapper save to cloud
             if (!isFirstLoad) {
                 syncToCloudAndLocal(p);
             }
@@ -810,11 +878,10 @@
             const initialNode = timeline[0];
             const retireNode = timeline.find(t => t.age === p.retireAge) || timeline[timeline.length - 1];
             const finalNode = timeline[timeline.length - 1];
-
+            
             document.getElementById('lbl-retire-asset').innerText = 'HK$ ' + Math.round(retireNode.nominalTotal).toLocaleString();
             document.getElementById('lbl-final-asset').innerText = 'HK$ ' + Math.round(finalNode.nominalTotal).toLocaleString();
             
-            // Status Tag matching overall purchasing capability bound
             const statusLabel = document.getElementById('lbl-real-status');
             if(finalNode.realTotal > initialNode.nominalTotal * 0.5) {
                 statusLabel.innerText = "極其安全";
@@ -827,7 +894,6 @@
                 statusLabel.className = "text-base font-bold text-rose-500";
             }
 
-            // Render Depletion warnings fields configuration
             const depletionBox = document.getElementById('depletion-container');
             depletionBox.innerHTML = '';
             
@@ -850,8 +916,7 @@
             appendDepletionBadge("強積金 (MPF)", depletion.mpf);
             appendDepletionBadge("股票/收息資產", depletion.securities);
             appendDepletionBadge("比特幣 (BTC)", depletion.btc);
-
-            // Render Accumulative withdrawals configurations
+            
             const statsBox = document.getElementById('withdrawal-stats-container');
             statsBox.innerHTML = `
                 <div class="bg-slate-900/40 p-2 rounded-lg border border-slate-800">
@@ -883,8 +948,7 @@
                     <span class="font-mono text-xs text-slate-200">HK$${Math.round(withdrawals.btc).toLocaleString()}</span>
                 </div>
             `;
-
-            // Die with Zero Recommendation processing
+            
             const suggestionPanel = document.getElementById('dwz-suggestion-panel');
             if (p.dwzEnable && age90Asset > p.dwzSafetyFloor) {
                 suggestionPanel.classList.remove('hidden');
@@ -905,10 +969,8 @@
         function updateChartVisualization() {
             const ctx = document.getElementById('wealthChart').getContext('2d');
             const labels = globalSimulationData.map(d => `${d.age}歲`);
-            
-            // Selection target variable data arrays mapping
             const dataPoints = globalSimulationData.map(d => viewMode === 'nominal' ? d.nominalTotal : d.realTotal);
-
+            
             if (chartInstance) {
                 chartInstance.destroy();
             }
@@ -961,10 +1023,10 @@
                         }
                     },
                     scales: {
-                        x: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#94a3b8', font: { size: 10 } } },
+                         x: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#94a3b8', font: { size: 10 } } },
                         y: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#94a3b8', font: { size: 10 } } }
                     }
-                }
+                 }
             });
         }
 
@@ -991,7 +1053,6 @@
             });
         }
 
-        // Supabase Infrastructure logic integration
         function setSyncStatus(status, text = '') {
             const badge = document.getElementById('sync-badge');
             if (status === 'ok') {
@@ -1018,7 +1079,6 @@
 
             localStorage.setItem('supaUrl', url);
             localStorage.setItem('supaKey', key);
-
             try {
                 supabaseClient = supabase.createClient(url, key);
                 supaConnected = true;
@@ -1061,14 +1121,28 @@
             if(s.fdUsdR) document.getElementById('fd-usd-r').value = s.fdUsdR;
             if(s.cashPool) document.getElementById('cash-pool').value = s.cashPool;
             if(s.fdStrategy) document.getElementById('fd-strategy').value = s.fdStrategy;
-            if(s.mpfBal) document.getElementById('mpf-bal').value = s.mpfBal;
-            if(s.mpfR) document.getElementById('mpf-r').value = s.mpfR;
-            if(s.mpfContrib) document.getElementById('mpf-contrib').value = s.mpfContrib;
-            if(s.mpfMonths) document.getElementById('mpf-months').value = s.mpfMonths;
+            
+            // Apply Restored v3.0 Parameters
+            if(s.salaryTotal) document.getElementById('salary-total').value = s.salaryTotal;
+            if(s.salaryBase) document.getElementById('salary-base').value = s.salaryBase;
+            if(s.salaryMonths) document.getElementById('salary-months').value = s.salaryMonths;
+            if(s.salaryRaise !== undefined) document.getElementById('salary-raise').value = s.salaryRaise;
+            if(s.empMpfRate !== undefined) document.getElementById('emp-mpf-rate').value = s.empMpfRate;
+            if(s.erMpfRate !== undefined) document.getElementById('er-mpf-rate').value = s.erMpfRate;
+            if(s.erMpfMax !== undefined) document.getElementById('er-mpf-max').value = s.erMpfMax;
+            if(s.mpfBondBal !== undefined) document.getElementById('mpf-bond-bal').value = s.mpfBondBal;
+            if(s.mpfBondAlloc !== undefined) document.getElementById('mpf-bond-alloc').value = s.mpfBondAlloc;
+            if(s.mpfBondCagr !== undefined) document.getElementById('mpf-bond-cagr').value = s.mpfBondCagr;
+            if(s.mpfNaBal !== undefined) document.getElementById('mpf-na-bal').value = s.mpfNaBal;
+            if(s.mpfNaAlloc !== undefined) document.getElementById('mpf-na-alloc').value = s.mpfNaAlloc;
+            if(s.mpfNaCagr !== undefined) document.getElementById('mpf-na-cagr').value = s.mpfNaCagr;
+            if(s.mpfEuBal !== undefined) document.getElementById('mpf-eu-bal').value = s.mpfEuBal;
+            if(s.mpfEuAlloc !== undefined) document.getElementById('mpf-eu-alloc').value = s.mpfEuAlloc;
+            if(s.mpfEuCagr !== undefined) document.getElementById('mpf-eu-cagr').value = s.mpfEuCagr;
+
             if(s.withdrawalStrategy) document.getElementById('withdrawal-strategy').value = s.withdrawalStrategy;
             if(s.dwzSafetyFloor) document.getElementById('dwz-safety-floor').value = s.dwzSafetyFloor;
             if(s.dwzEnable !== undefined) document.getElementById('dwz-enable').value = s.dwzEnable ? 'true' : 'false';
-
             if (s.stocks && Array.isArray(s.stocks)) {
                 const container = document.getElementById('stock-list');
                 container.innerHTML = '';
@@ -1077,9 +1151,7 @@
         }
 
         async function syncToCloudAndLocal(stateObj) {
-            // LocalStorage persistent cache save
             localStorage.setItem('local_lifecycle_state', JSON.stringify(stateObj));
-
             if (supaConnected && supabaseClient) {
                 try {
                     const { error } = await supabaseClient
@@ -1090,7 +1162,6 @@
                     setSyncStatus('ok');
                 } catch(e) {
                     console.error("Supabase Sync Failed:", e);
-                    // Trigger custom local safety alert mapping requirement
                     const badge = document.getElementById('sync-badge');
                     badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span> ⚠️ 同步失敗 (已存本機)`;
                     badge.className = "bg-amber-950/50 text-amber-400 text-[11px] px-2.5 py-1.5 rounded-lg flex items-center gap-1 font-mono border border-amber-800/40";
@@ -1098,7 +1169,6 @@
             }
         }
 
-        // Diagnostic Pipeline Engine Execution (v4.2 New Diagnostic Requirement)
         async function diagnoseSupabase() {
             const url = document.getElementById('supa-url').value.trim();
             const key = document.getElementById('supa-key').value.trim();
@@ -1110,18 +1180,13 @@
             
             let client = supabase.createClient(url, key);
             let reports = [];
-            const testId = 9999; // Explicit sandboxed test key row index
+            const testId = 9999;
             
-            // 1. Test Writing (INSERT)
             try {
-                const { error: insErr } = await client
-                    .from('lifecycle_plan')
-                    .insert([{ id: testId, payload: { test: "diagnostic_token" }, updated_at: new Date().toISOString() }]);
-                
+                const { error: insErr } = await client.from('lifecycle_plan').insert([{ id: testId, payload: { test: "diagnostic_token" }, updated_at: new Date().toISOString() }]);
                 if(!insErr) {
                     reports.push("✓ 可寫入 (INSERT)");
                 } else {
-                    // Check if row already exists, try alternate path
                     if (insErr.code === '23505') { 
                         reports.push("✓ 可寫入 (INSERT 測試因主鍵存在跳過，視為正常)");
                     } else {
@@ -1132,14 +1197,8 @@
                 reports.push(`❌ 無法寫入 (INSERT): ${e.message || JSON.stringify(e)}`);
             }
 
-            // 2. Test Reading (SELECT)
             try {
-                const { data, error: selErr } = await client
-                    .from('lifecycle_plan')
-                    .select('payload')
-                    .eq('id', testId)
-                    .maybeSingle();
-                
+                const { data, error: selErr } = await client.from('lifecycle_plan').select('payload').eq('id', testId).maybeSingle();
                 if(!selErr) {
                     reports.push("✓ 可讀取 (SELECT)");
                 } else {
@@ -1149,12 +1208,8 @@
                 reports.push(`❌ 無法讀取 (SELECT): ${e.message || JSON.stringify(e)}`);
             }
 
-            // 3. Test Updating (UPDATE / UPSERT Conflict resolution)
             try {
-                const { error: updErr } = await client
-                    .from('lifecycle_plan')
-                    .upsert([{ id: testId, payload: { test: "diagnostic_token_updated" }, updated_at: new Date().toISOString() }], { onConflict: 'id' });
-                
+                const { error: updErr } = await client.from('lifecycle_plan').upsert([{ id: testId, payload: { test: "diagnostic_token_updated" }, updated_at: new Date().toISOString() }], { onConflict: 'id' });
                 if(!updErr) {
                     reports.push("✓ 可更新 (UPDATE/UPSERT)");
                 } else {
@@ -1164,9 +1219,7 @@
                 reports.push(`❌ 無法更新 (UPDATE/UPSERT): ${e.message || JSON.stringify(e)}`);
             }
 
-            // Clean up sandboxed test token row
             await client.from('lifecycle_plan').delete().eq('id', testId);
-
             alert("【Supabase 同步診斷報告】\n\n" + reports.join("\n"));
         }
 
@@ -1175,7 +1228,6 @@
             const cachedUrl = localStorage.getItem('supaUrl');
             const cachedKey = localStorage.getItem('supaKey');
             const localState = localStorage.getItem('local_lifecycle_state');
-
             if(cachedUrl && cachedKey) {
                 supabaseClient = supabase.createClient(cachedUrl, cachedKey);
                 supabaseClient.from('lifecycle_plan').select('id').limit(1).then(({error}) => {
