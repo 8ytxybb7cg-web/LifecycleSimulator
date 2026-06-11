@@ -1,5 +1,3 @@
-新
-
 <!DOCTYPE html>
 <html lang="zh-HK">
 <head>
@@ -70,7 +68,8 @@
         .drip-checkbox:checked { background: #60a5fa; }
         .drip-checkbox:checked::after { content: '✔'; color: #0f172a; position: absolute; font-size: 0.8rem; left: 3px; top: -2px; }
         .fab {
-            position: fixed; bottom: 24px; right: 24px; z-index: 50;
+            position: fixed;
+            bottom: 24px; right: 24px; z-index: 50;
             background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
             box-shadow: 0 4px 20px rgba(0,0,0,0.4), 0 0 0 2px rgba(255,255,255,0.1);
             transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -79,18 +78,21 @@
         .toggle-switch-peer:checked + .toggle-switch-bg { background-color: #3b82f6; }
         .toggle-switch-peer:checked + .toggle-switch-bg > .toggle-switch-knob { transform: translateX(20px); }
         #toast {
-            visibility: hidden; min-width: 260px; background-color: rgba(16, 185, 129, 0.95);
+            visibility: hidden;
+            min-width: 260px; background-color: rgba(220, 38, 38, 0.95); /* Changed default to red for errors */
             color: #fff; text-align: center; border-radius: 10px; padding: 14px;
-            position: fixed; z-index: 100; left: 50%; bottom: 90px; transform: translateX(-50%);
+            position: fixed; z-index: 100;
+            left: 50%; bottom: 90px; transform: translateX(-50%);
             backdrop-filter: blur(10px); opacity: 0; transition: opacity 0.3s, bottom 0.3s;
-            font-weight: bold; border: 1px solid rgba(255,255,255,0.2);
+            font-weight: bold;
+            border: 1px solid rgba(255,255,255,0.2);
         }
+        #toast.success { background-color: rgba(16, 185, 129, 0.95); }
         #toast.show { visibility: visible; opacity: 1; bottom: 100px; }
     </style>
 </head>
 <body class="pb-28">
 
-    <!-- Top Navigation / Header -->
     <div class="sticky top-0 z-40 bg-[#0f172a]/90 backdrop-blur-md border-b border-white/10 pt-4 pb-0 px-4 mb-6">
         <div class="flex justify-between items-center mb-3 max-w-4xl mx-auto">
             <h1 class="text-xl font-bold flex items-center gap-2">
@@ -102,7 +104,6 @@
             </div>
         </div>
 
-        <!-- Tabs Navigation -->
         <div class="flex gap-1 max-w-4xl mx-auto border-b border-white/10">
             <button onclick="switchTab('tab-home')" id="btn-tab-home" class="flex-1 py-3 text-sm font-bold border-b-2 border-blue-400 text-blue-400 transition-colors">
                 <i class="fa-solid fa-house mr-1"></i> 首頁摘要
@@ -116,13 +117,10 @@
         </div>
     </div>
 
-    <!-- Main Content Area -->
     <div class="max-w-4xl mx-auto px-4 space-y-6">
 
-        <!-- ==================== TAB 1: 首頁摘要 ==================== -->
         <div id="tab-home" class="tab-content space-y-4">
             
-            <!-- 65歲資產卡片 (含 iOS Switch) -->
             <div class="glass-panel p-6 border-l-4 border-blue-500 relative overflow-hidden">
                 <div class="absolute right-[-10px] top-[-10px] opacity-5 text-8xl text-blue-400"><i class="fa-solid fa-piggy-bank"></i></div>
                 <div class="flex justify-between items-start relative z-10">
@@ -133,7 +131,6 @@
                         <div class="text-[11px] text-gray-500 mt-1" id="stat-retire-desc2">相當於退休當年名義資產 HK$ 0</div>
                     </div>
                     
-                    <!-- iOS Toggle Switch -->
                     <div class="flex flex-col items-end bg-black/20 p-2 rounded-xl border border-white/5">
                         <span class="text-[10px] text-gray-500 mb-2 font-bold">顯示模式</span>
                         <div class="flex items-center gap-2">
@@ -150,28 +147,26 @@
                 </div>
             </div>
 
-            <!-- 90歲終點卡片 -->
             <div class="glass-panel p-6 border-l-4 border-emerald-500 relative overflow-hidden">
                 <div class="absolute right-[-10px] top-[-10px] opacity-5 text-8xl text-emerald-400"><i class="fa-solid fa-flag-checkered"></i></div>
                 <div class="relative z-10">
                     <h2 class="text-gray-400 text-sm font-bold mb-1" id="stat-end-title">終點 (90歲) 總剩餘資產</h2>
                     <div id="stat-end-val" class="text-3xl font-black text-white my-2 tracking-tight">HK$ 0</div>
-                    <div class="text-[11px] font-bold text-emerald-400 mb-3">◆ 中位數情境最末年剩餘總淨額</div>
+                    <div class="text-[11px] font-bold text-emerald-400 mb-3">◆ 基準情景最末年剩餘總淨額</div>
                     
                     <div class="bg-black/30 p-3 rounded-lg border border-white/5 text-[11px] space-y-1">
                         <div class="flex justify-between">
-                            <span class="text-red-400 font-bold"><i class="fa-solid fa-arrow-trend-down"></i> 最差情境 (10%大衰退):</span>
+                            <span class="text-red-400 font-bold"><i class="fa-solid fa-arrow-trend-down"></i> 悲觀情景 (回報與匯率逆境):</span>
                             <span id="stat-end-worst" class="text-gray-300">HK$ 0</span>
                         </div>
                         <div class="flex justify-between border-t border-white/5 pt-1 mt-1">
-                            <span class="text-emerald-400 font-bold"><i class="fa-solid fa-arrow-trend-up"></i> 最佳情境 (90%大繁榮):</span>
+                            <span class="text-emerald-400 font-bold"><i class="fa-solid fa-arrow-trend-up"></i> 樂觀情景 (回報與匯率順境):</span>
                             <span id="stat-end-best" class="text-gray-300">HK$ 0</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Die With Zero Alert -->
             <div id="dieWithZeroAlert" class="hidden glass-panel p-5 border-l-4 border-amber-500 bg-gradient-to-r from-amber-500/10 to-transparent">
                 <h3 class="text-md font-bold text-amber-400 mb-2 flex items-center gap-2"><i class="fa-solid fa-gift"></i> 應駛得駛生命優化提點 (Die with Zero)</h3>
                 <p id="alertMessage" class="text-xs text-gray-300 leading-relaxed"></p>
@@ -179,7 +174,6 @@
 
         </div>
 
-        <!-- ==================== TAB 2: 圖表分析 ==================== -->
         <div id="tab-chart" class="tab-content hidden h-[60vh] min-h-[420px]">
             <div class="glass-panel p-4 h-full w-full flex flex-col">
                 <h3 class="text-sm font-bold text-gray-300 mb-4 pl-2 border-l-2 border-blue-400">資產生命週期安全軌跡 (三情境對比)</h3>
@@ -189,13 +183,11 @@
             </div>
         </div>
 
-        <!-- ==================== TAB 3: 參數與雲端設定 ==================== -->
         <div id="tab-details" class="tab-content hidden space-y-6">
             
-            <!-- Supabase 前台登入區塊 -->
             <div class="glass-panel p-5 border border-purple-500/30 bg-gradient-to-b from-purple-950/20 to-transparent">
                 <h3 class="text-lg font-semibold mb-3 flex items-center gap-2 text-purple-300"><i class="fa-solid fa-cloud"></i> Supabase 雲端資料同步設定</h3>
-                <p class="text-xs text-gray-400 mb-4">在此輸入您的 Supabase 專案憑證。連線成功後，系統將自動讀取並於每次精算時同步上傳；留空則自動切換為本地 LocalStorage 儲存模式。</p>
+                <p class="text-xs text-gray-400 mb-4">在此輸入您的 Supabase 專案憑證。連線成功後，系統將自動以 UPSERT 方式覆蓋最新配置；留空則切換為本地儲存。</p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                     <div>
                         <label class="block text-[11px] text-gray-400 mb-1">Supabase Project URL</label>
@@ -214,142 +206,137 @@
                 </div>
             </div>
 
-            <!-- 基本設定 -->
             <div class="glass-panel p-5">
                 <h3 class="text-lg font-semibold mb-4 border-b border-gray-700 pb-2 accent-text">一、基本設定與雙軌通脹</h3>
                 <div class="grid grid-cols-2 gap-4 mb-4">
                     <div><label class="block text-xs text-gray-400 mb-1">當前年齡</label>
-                    <input type="number" id="currentAge" class="glass-input w-full rounded p-2 text-sm" value="39"></div>
+                    <input type="number" id="currentAge" class="glass-input w-full rounded p-2 text-sm" value="39" min="0"></div>
                     <div><label class="block text-xs text-gray-400 mb-1">退休年齡</label>
-                    <input type="number" id="retireAge" class="glass-input w-full rounded p-2 text-sm text-yellow-300 font-bold" value="65"></div>
+                    <input type="number" id="retireAge" class="glass-input w-full rounded p-2 text-sm text-yellow-300 font-bold" value="65" min="0"></div>
                     <div><label class="block text-xs text-gray-400 mb-1">預期壽命</label>
-                    <input type="number" id="lifeExpectancy" class="glass-input w-full rounded p-2 text-sm" value="90"></div>
+                    <input type="number" id="lifeExpectancy" class="glass-input w-full rounded p-2 text-sm" value="90" min="0"></div>
                     <div><label class="block text-xs text-gray-400 mb-1">退休一次性大額開支 (HKD)</label>
-                    <input type="number" id="oneTimeExp" class="glass-input w-full rounded p-2 text-sm" value="3000000"></div>
+                    <input type="number" id="oneTimeExp" class="glass-input w-full rounded p-2 text-sm" value="3000000" min="0"></div>
                 </div>
                 <div class="bg-black/20 p-3 rounded-lg border border-white/5 grid grid-cols-2 gap-3">
                     <div><label class="block text-[10px] text-gray-400 mb-1">現時一般生活開支 (月/HKD)</label>
-                    <input type="number" id="genExp" class="glass-input w-full rounded p-1.5 text-sm" value="10000"></div>
+                    <input type="number" id="genExp" class="glass-input w-full rounded p-1.5 text-sm" value="10000" min="0"></div>
                     <div><label class="block text-[10px] text-gray-400 mb-1">一般生活通脹率 (%)</label>
-                    <input type="number" step="0.1" id="genInf" class="glass-input w-full rounded p-1.5 text-sm text-red-300" value="3.0"></div>
+                    <input type="number" step="0.1" id="genInf" class="glass-input w-full rounded p-1.5 text-sm text-red-300" value="3.0" min="0" max="100"></div>
                     <div><label class="block text-[10px] text-gray-400 mb-1">現時額外醫療開支 (月/HKD)</label>
-                    <input type="number" id="medExp" class="glass-input w-full rounded p-1.5 text-sm text-cyan-300" value="0"></div>
+                    <input type="number" id="medExp" class="glass-input w-full rounded p-1.5 text-sm text-cyan-300" value="0" min="0"></div>
                     <div><label class="block text-[10px] text-gray-400 mb-1">醫療專屬通脹率 (%)</label>
-                    <input type="number" step="0.1" id="medInf" class="glass-input w-full rounded p-1.5 text-sm text-red-400 font-bold" value="5.0"></div>
+                    <input type="number" step="0.1" id="medInf" class="glass-input w-full rounded p-1.5 text-sm text-red-400 font-bold" value="5.0" min="0" max="100"></div>
                 </div>
             </div>
 
-            <!-- 收入與現金池 -->
             <div class="glass-panel p-5">
                 <h3 class="text-lg font-semibold mb-4 border-b border-gray-700 pb-2 accent-text">二、收入、流動現金與自願醫保</h3>
                 <div class="grid grid-cols-2 gap-3 mb-4">
                     <div><label class="block text-xs text-gray-400 mb-1">當前總月薪 (實收)</label>
-                    <input type="number" id="totalSalary" class="glass-input w-full rounded p-1.5 text-sm" value="25000"></div>
+                    <input type="number" id="totalSalary" class="glass-input w-full rounded p-1.5 text-sm" value="25000" min="0"></div>
                     <div><label class="block text-xs text-gray-400 mb-1">底薪 (MPF 供款基數)</label>
-                    <input type="number" id="baseSalary" class="glass-input w-full rounded p-1.5 text-sm" value="23500"></div>
+                    <input type="number" id="baseSalary" class="glass-input w-full rounded p-1.5 text-sm" value="23500" min="0"></div>
                     <div><label class="block text-xs text-gray-400 mb-1">每年固定加薪幅度 (月薪加幅)</label>
                     <input type="number" id="salaryInc" class="glass-input w-full rounded p-1.5 text-sm text-emerald-300" value="500"></div>
                     <div><label class="block text-xs text-gray-400 mb-1">現時自願醫保 VHIS (月費基數)</label>
-                    <input type="number" id="vhisPremium" class="glass-input w-full rounded p-1.5 text-sm text-purple-300" value="1200"></div>
+                    <input type="number" id="vhisPremium" class="glass-input w-full rounded p-1.5 text-sm text-purple-300" value="1200" min="0"></div>
                 </div>
                 
                 <div class="bg-black/20 p-3 rounded-lg border border-green-500/20 mt-3">
                     <h4 class="text-xs font-bold text-green-400 mb-2"><i class="fa-solid fa-wallet"></i> 流動現金池與安全檢視</h4>
-                    <div class="grid grid-cols-1 gap-3">
-                        <div><label class="block text-xs text-gray-400 mb-1">目前持有流動現金起點 (HKD)</label>
-                        <input type="number" id="initialCash" class="glass-input w-full rounded p-1.5 text-sm" value="100000"></div>
-                        
-                        <div class="border-t border-white/5 pt-2 mt-1">
-                            <label class="block text-xs text-gray-400 mb-1">動態檢視指定模擬年齡的現金池餘額</label>
-                            <div class="flex gap-2">
-                                <input type="number" id="viewAgeCash" class="glass-input w-1/2 rounded p-1.5 text-sm" value="50">
-                                <button type="button" onclick="checkCashAtAge()" class="bg-green-700 text-white font-bold w-1/2 rounded text-xs hover:bg-green-600 transition">即時查詢</button>
-                            </div>
-                            <div id="cashViewResult" class="text-[11px] font-bold text-green-300 mt-2 min-h-[16px]"></div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div><label class="block text-xs text-gray-400 mb-1">目前持有現金起點 (HKD)</label>
+                        <input type="number" id="initialCash" class="glass-input w-full rounded p-1.5 text-sm" value="100000" min="0"></div>
+                        <div><label class="block text-xs text-gray-400 mb-1">現金池活期年收益率 (%)</label>
+                        <input type="number" step="0.1" id="cashYield" class="glass-input w-full rounded p-1.5 text-sm text-green-300" value="2.0" min="0" max="100"></div>
+                    </div>
+                    <div class="border-t border-white/5 pt-2 mt-3">
+                        <label class="block text-xs text-gray-400 mb-1">動態檢視指定模擬年齡的現金池餘額</label>
+                        <div class="flex gap-2">
+                            <input type="number" id="viewAgeCash" class="glass-input w-1/2 rounded p-1.5 text-sm" value="50" min="0">
+                            <button type="button" onclick="checkCashAtAge()" class="bg-green-700 text-white font-bold w-1/2 rounded text-xs hover:bg-green-600 transition">即時查詢</button>
                         </div>
+                        <div id="cashViewResult" class="text-[11px] font-bold text-green-300 mt-2 min-h-[16px]"></div>
                     </div>
                 </div>
             </div>
 
-            <!-- 強積金 -->
             <div class="glass-panel p-5">
                 <h3 class="text-lg font-semibold mb-4 border-b border-gray-700 pb-2 accent-text">三、強積金組合 (MPF)</h3>
                 <div class="grid grid-cols-2 gap-3 mb-4 bg-black/20 p-2 rounded-lg text-center">
                     <div><label class="block text-[10px] text-gray-400 mb-1">僱員自願/強制供款 (%)</label>
-                    <input type="number" id="mpfEmpRate" class="glass-input w-full text-center rounded p-1 text-sm" value="5"></div>
+                    <input type="number" id="mpfEmpRate" class="glass-input w-full text-center rounded p-1 text-sm" value="5" min="0" max="100"></div>
                     <div><label class="block text-[10px] text-gray-400 mb-1">僱主配對/額外供款 (%)</label>
-                    <input type="number" id="mpfEmrRate" class="glass-input w-full text-center rounded p-1 text-sm" value="10"></div>
+                    <input type="number" id="mpfEmrRate" class="glass-input w-full text-center rounded p-1 text-sm" value="10" min="0" max="100"></div>
                 </div>
                 <div class="space-y-4">
                     <div class="grid grid-cols-3 gap-2">
                         <div class="col-span-3 text-xs font-bold text-teal-400 border-b border-white/5 pb-1">環球債券基金</div>
-                        <div><label class="block text-[10px] text-gray-500 mb-1">現有結餘</label><input type="number" id="mpfBal1" class="glass-input w-full rounded p-1 text-xs" value="100000"></div>
-                        <div><label class="block text-[10px] text-gray-500 mb-1">未來分配 %</label><input type="number" id="mpfAlloc1" class="glass-input w-full rounded p-1 text-xs" value="20"></div>
+                        <div><label class="block text-[10px] text-gray-500 mb-1">現有結餘</label><input type="number" id="mpfBal1" class="glass-input w-full rounded p-1 text-xs" value="100000" min="0"></div>
+                        <div><label class="block text-[10px] text-gray-500 mb-1">未來分配 %</label><input type="number" id="mpfAlloc1" class="glass-input w-full rounded p-1 text-xs" value="20" min="0" max="100"></div>
                         <div><label class="block text-[10px] text-gray-500 mb-1">預期 CAGR%</label><input type="number" id="mpfCagr1" class="glass-input w-full rounded p-1 text-xs" value="2.5"></div>
                     </div>
                     <div class="grid grid-cols-3 gap-2">
                         <div class="col-span-3 text-xs font-bold text-teal-400 border-b border-white/5 pb-1">歐洲股票基金</div>
-                        <div><input type="number" id="mpfBal2" class="glass-input w-full rounded p-1 text-xs" value="150000"></div>
-                        <div><input type="number" id="mpfAlloc2" class="glass-input w-full rounded p-1 text-xs" value="30"></div>
+                        <div><input type="number" id="mpfBal2" class="glass-input w-full rounded p-1 text-xs" value="150000" min="0"></div>
+                        <div><input type="number" id="mpfAlloc2" class="glass-input w-full rounded p-1 text-xs" value="30" min="0" max="100"></div>
                         <div><input type="number" id="mpfCagr2" class="glass-input w-full rounded p-1 text-xs" value="5.5"></div>
                     </div>
                     <div class="grid grid-cols-3 gap-2">
                         <div class="col-span-3 text-xs font-bold text-teal-400 border-b border-white/5 pb-1">北美股票基金</div>
-                        <div><input type="number" id="mpfBal3" class="glass-input w-full rounded p-1 text-xs" value="250000"></div>
-                        <div><input type="number" id="mpfAlloc3" class="glass-input w-full rounded p-1 text-xs" value="50"></div>
+                        <div><input type="number" id="mpfBal3" class="glass-input w-full rounded p-1 text-xs" value="250000" min="0"></div>
+                        <div><input type="number" id="mpfAlloc3" class="glass-input w-full rounded p-1 text-xs" value="50" min="0" max="100"></div>
                         <div><input type="number" id="mpfCagr3" class="glass-input w-full rounded p-1 text-xs" value="8.5"></div>
                     </div>
                 </div>
             </div>
 
-            <!-- 定期存款 (美金原幣滾存優化版) -->
             <div class="glass-panel p-5">
                 <h3 class="text-lg font-semibold mb-4 border-b border-gray-700 pb-2 accent-text">四、定期存款 (非必要不套現、醫療後盾)</h3>
                 <div class="space-y-4">
                     <div class="bg-black/20 p-3 rounded-lg border border-amber-500/20">
                         <h4 class="text-xs font-bold text-amber-300 mb-2">港幣定存 (HKD)</h4>
                         <div class="grid grid-cols-3 gap-2">
-                            <div><label class="block text-[10px] text-gray-400 mb-1">本金 (HKD)</label><input type="number" id="fdHkdP" class="glass-input w-full rounded p-1.5 text-xs" value="500000"></div>
-                            <div><label class="block text-[10px] text-gray-400 mb-1">年利率 (%)</label><input type="number" id="fdHkdR" step="0.1" class="glass-input w-full rounded p-1.5 text-xs" value="4.0"></div>
-                            <div><label class="block text-[10px] text-gray-400 mb-1">存期 (月)</label><input type="number" id="fdHkdM" class="glass-input w-full rounded p-1.5 text-xs" value="6"></div>
+                            <div><label class="block text-[10px] text-gray-400 mb-1">本金 (HKD)</label><input type="number" id="fdHkdP" class="glass-input w-full rounded p-1.5 text-xs" value="500000" min="0"></div>
+                            <div><label class="block text-[10px] text-gray-400 mb-1">年利率 (%)</label><input type="number" id="fdHkdR" step="0.1" class="glass-input w-full rounded p-1.5 text-xs" value="4.0" min="0"></div>
+                            <div><label class="block text-[10px] text-gray-400 mb-1">存期 (月)</label><input type="number" id="fdHkdM" class="glass-input w-full rounded p-1.5 text-xs" value="6" min="1"></div>
                         </div>
                     </div>
                     <div class="bg-black/20 p-3 rounded-lg border border-cyan-500/20">
                         <div class="flex justify-between items-center mb-2">
                             <h4 class="text-xs font-bold text-cyan-300">美金定存 (USD)</h4>
-                            <span class="text-[10px] text-gray-400 font-mono">後台鎖定匯率: 1 USD = 7.83 HKD</span>
+                            <span class="text-[10px] text-gray-400 font-mono">受三情景匯率波動影響</span>
                         </div>
                         <div class="grid grid-cols-3 gap-2">
-                            <div><label class="block text-[10px] text-gray-400 mb-1">本金 (直接填USD)</label><input type="number" id="fdUsdP" class="glass-input w-full rounded p-1.5 text-xs text-cyan-200 font-bold" value="50000"></div>
-                            <div><label class="block text-[10px] text-gray-400 mb-1">年利率 (%)</label><input type="number" id="fdUsdR" step="0.1" class="glass-input w-full rounded p-1.5 text-xs" value="4.8"></div>
-                            <div><label class="block text-[10px] text-gray-400 mb-1">存期 (月)</label><input type="number" id="fdUsdM" class="glass-input w-full rounded p-1.5 text-xs" value="3"></div>
+                            <div><label class="block text-[10px] text-gray-400 mb-1">本金 (直接填USD)</label><input type="number" id="fdUsdP" class="glass-input w-full rounded p-1.5 text-xs text-cyan-200 font-bold" value="50000" min="0"></div>
+                            <div><label class="block text-[10px] text-gray-400 mb-1">年利率 (%)</label><input type="number" id="fdUsdR" step="0.1" class="glass-input w-full rounded p-1.5 text-xs" value="4.8" min="0"></div>
+                            <div><label class="block text-[10px] text-gray-400 mb-1">存期 (月)</label><input type="number" id="fdUsdM" class="glass-input w-full rounded p-1.5 text-xs" value="3" min="1"></div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 證券與加密資產 (定額變賣策略優化版) -->
             <div class="glass-panel p-5">
                 <h3 class="text-lg font-semibold mb-3 border-b border-gray-700 pb-2 accent-text">五、資產變賣策略與資產配置</h3>
                 
                 <div class="bg-blue-950/30 p-3 rounded-lg border border-blue-500/30 mb-4 space-y-3">
-                    <h4 class="text-xs font-bold text-blue-300"><i class="fa-solid fa-calculator"></i> 鎖定基準值定額出售策略</h4>
-                    <p class="text-[11px] text-gray-400">當模擬到達指定年齡時，系統將鎖定當時證券總市值，並以此基準計算固定提取額，避免資產永遠消耗不完或扣成負數。退休後自動停止每月供款。</p>
+                    <h4 class="text-xs font-bold text-blue-300"><i class="fa-solid fa-calculator"></i> 動態比例出售策略</h4>
+                    <p class="text-[11px] text-gray-400">當模擬到達指定年齡時，系統將每年以「設定比例 × 當年度證券剩餘市值」來計算提領額並注入現金池。</p>
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="block text-[10px] text-gray-400 mb-1">開始出售年齡 (X 歲)</label>
-                            <input type="number" id="secSellAge" class="glass-input w-full rounded p-1.5 text-xs text-blue-300 font-bold" value="65">
+                            <input type="number" id="secSellAge" class="glass-input w-full rounded p-1.5 text-xs text-blue-300 font-bold" value="65" min="0">
                         </div>
                         <div>
-                            <label class="block text-[10px] text-gray-400 mb-1">每年固定出售比例 (Y %)</label>
-                            <input type="number" id="secSellPercent" class="glass-input w-full rounded p-1.5 text-xs text-blue-300 font-bold" value="5.0">
+                            <label class="block text-[10px] text-gray-400 mb-1">每年動態出售比例 (Y %)</label>
+                            <input type="number" id="secSellPercent" class="glass-input w-full rounded p-1.5 text-xs text-blue-300 font-bold" value="5.0" min="0" max="100">
                         </div>
                     </div>
                 </div>
                 
                 <div id="sec-container" class="space-y-3">
-                    <!-- 動態生成手機優化網格卡片 -->
-                </div>
+                    </div>
             </div>
 
             <div class="h-12"></div>
@@ -357,19 +344,16 @@
 
     </div>
 
-    <!-- Floating Action Button (FAB) -->
     <button id="fab-calc" onclick="onFabClick()" class="fab text-white font-bold rounded-full h-14 px-6 flex items-center justify-center gap-2">
         <i class="fa-solid fa-rotate mr-0.5"></i> <span>同步並精算模擬</span>
     </button>
 
-    <!-- Toast Notification -->
-    <div id="toast">✔ 運算完成並已儲存</div>
+    <div id="toast"></div>
 
 <script>
     // ==========================================
     // 全域常數與狀態
     // ==========================================
-    const FX_USD_HKD = 7.83; 
     let currentDisplayMode = 'real'; 
     let chartInstance = null;
     
@@ -383,14 +367,14 @@
         retireData: { age: 65, real: 0, nominal: 0 },
         endData: { age: 90, real: 0, nominal: 0, worst: 0, best: 0, worstReal: 0 }
     };
-    
+
     const defaultSecurities = [
-        { code: '0005.HK', price: 142.0, qty: 500, monthPmt: 0, cagr: 4.0, div: 5.5, drip: true },
-        { code: 'VOO', price: 500.0, qty: 10, monthPmt: 3000, cagr: 10.0, div: 1.3, drip: true },
-        { code: 'QQQ', price: 450.0, qty: 5, monthPmt: 2000, cagr: 12.0, div: 0.6, drip: true },
-        { code: 'SCHD', price: 80.0, qty: 50, monthPmt: 1000, cagr: 8.0, div: 3.4, drip: true },
-        { code: 'SGOV', price: 100.0, qty: 100, monthPmt: 0, cagr: 4.5, div: 4.0, drip: true },
-        { code: 'BTC', price: 65000.0, qty: 0.5, monthPmt: 1000, cagr: 12.0, div: 0.0, drip: false }
+        { code: '0005.HK', price: 142.0, qty: 500, monthPmt: 0, cagr: 4.0, div: 5.5, drip: true, currency: 'HKD' },
+        { code: 'VOO', price: 500.0, qty: 10, monthPmt: 3000, cagr: 10.0, div: 1.3, drip: true, currency: 'USD' },
+        { code: 'QQQ', price: 450.0, qty: 5, monthPmt: 2000, cagr: 12.0, div: 0.6, drip: true, currency: 'USD' },
+        { code: 'SCHD', price: 80.0, qty: 50, monthPmt: 1000, cagr: 8.0, div: 3.4, drip: true, currency: 'USD' },
+        { code: 'SGOV', price: 100.0, qty: 100, monthPmt: 0, cagr: 4.5, div: 4.0, drip: true, currency: 'USD' },
+        { code: 'BTC', price: 65000.0, qty: 0.5, monthPmt: 1000, cagr: 12.0, div: 0.0, drip: false, currency: 'USD' }
     ];
 
     let supabaseClient = null;
@@ -406,7 +390,7 @@
         if(age <= 65) return 3.75;
         if(age <= 70) return 5.41;
         if(age <= 75) return 7.50;
-        return 10.83; 
+        return 10.83;
     }
 
     // ==========================================
@@ -424,17 +408,21 @@
             <div class="bg-black/20 p-3 rounded-xl border ${borderCol} space-y-3 relative overflow-hidden">
                 ${isCrypto ? '<div class="absolute right-[-10px] top-[-5px] opacity-10 text-5xl text-amber-500"><i class="fa-brands fa-bitcoin"></i></div>' : ''}
                 <div class="flex justify-between items-center border-b border-white/10 pb-2 relative z-10">
-                    <div class="font-bold text-${themeColor} text-sm flex items-center gap-2">
+                    <div class="font-bold text-${themeColor} text-sm flex items-center gap-1">
                         <input type="text" id="secCode_${idx}" class="bg-transparent w-20 font-bold outline-none" value="${sec.code}" readonly>
+                        <select id="secCurr_${idx}" class="glass-select w-16 !p-1 text-[10px]">
+                            <option value="HKD" ${sec.currency==='HKD'?'selected':''}>HKD</option>
+                            <option value="USD" ${sec.currency==='USD'?'selected':''}>USD</option>
+                        </select>
                     </div>
                     <div class="flex items-center gap-2">
-                        <span class="text-[10px] text-gray-400">基準現價$</span>
+                        <span class="text-[10px] text-gray-400">現價</span>
                         <input type="number" id="secPrice_${idx}" class="glass-input w-20 p-1.5 text-xs text-right rounded" value="${sec.price}">
                     </div>
                 </div>
                 <div class="grid grid-cols-4 gap-2 text-center text-xs relative z-10">
                     <div><div class="text-[10px] text-gray-500 mb-1">初始持股</div><input type="number" step="0.0001" id="secQty_${idx}" class="glass-input w-full p-1.5 rounded text-center" value="${sec.qty}"></div>
-                    <div><div class="text-[10px] text-gray-500 mb-1">月供款($)</div><input type="number" id="secPmt_${idx}" class="glass-input w-full p-1.5 rounded text-center" value="${sec.monthPmt}"></div>
+                    <div><div class="text-[10px] text-gray-500 mb-1">月供(HKD)</div><input type="number" id="secPmt_${idx}" class="glass-input w-full p-1.5 rounded text-center" value="${sec.monthPmt}"></div>
                     <div><div class="text-[10px] text-gray-500 mb-1">預期CAGR%</div><input type="number" step="0.1" id="secCagr_${idx}" class="glass-input w-full p-1.5 rounded text-center" value="${sec.cagr}"></div>
                     <div><div class="text-[10px] text-gray-500 mb-1">年股息%</div><input type="number" step="0.1" id="secDiv_${idx}" class="glass-input w-full p-1.5 rounded text-center" value="${sec.div}"></div>
                 </div>
@@ -445,10 +433,8 @@
             </div>`;
         });
 
-        // 讀取本地暫存之 Supabase 金鑰與歷史參數
         if(localStorage.getItem('supaUrl')) document.getElementById('supaUrl').value = localStorage.getItem('supaUrl');
         if(localStorage.getItem('supaKey')) document.getElementById('supaKey').value = localStorage.getItem('supaKey');
-        
         const cachedParams = localStorage.getItem('local_retirement_params');
         if(cachedParams) {
             try { unpackState(JSON.parse(cachedParams)); } catch(e){}
@@ -463,7 +449,6 @@
             el.classList.remove('border-blue-400', 'text-blue-400');
             el.classList.add('border-transparent', 'text-gray-400');
         });
-        
         document.getElementById(tabId).classList.remove('hidden');
         document.getElementById('btn-' + tabId).classList.remove('border-transparent', 'text-gray-400');
         document.getElementById('btn-' + tabId).classList.add('border-blue-400', 'text-blue-400');
@@ -477,17 +462,55 @@
         currentDisplayMode = document.getElementById('mode-toggle').checked ? 'real' : 'nominal';
         document.getElementById('mode-lbl-real').className = currentDisplayMode === 'real' ? 'text-[11px] font-bold text-blue-400' : 'text-[11px] font-bold text-gray-500';
         document.getElementById('mode-lbl-nom').className = currentDisplayMode === 'real' ? 'text-[11px] font-bold text-gray-500' : 'text-[11px] font-bold text-blue-400';
-        updateUI(); 
+        updateUI();
     }
 
     // ==========================================
-    // 精密修正版精算內核引擎 (保底、非必要不提現瀑布流)
+    // 嚴格輸入驗證模組
     // ==========================================
-    function runSimulation() {
+    function validateInputs() {
+        const startAge = parseInt(document.getElementById('currentAge').value) || 0;
+        const retireAge = parseInt(document.getElementById('retireAge').value) || 0;
+        const lifeExp = parseInt(document.getElementById('lifeExpectancy').value) || 0;
+
+        if (startAge < 0 || retireAge < 0 || lifeExp < 0) return "年齡不得為負數";
+        if (retireAge <= startAge) return "退休年齡必須大於當前年齡";
+        if (lifeExp <= retireAge) return "預期壽命必須大於退休年齡";
+
+        const alloc1 = parseFloat(document.getElementById('mpfAlloc1').value) || 0;
+        const alloc2 = parseFloat(document.getElementById('mpfAlloc2').value) || 0;
+        const alloc3 = parseFloat(document.getElementById('mpfAlloc3').value) || 0;
+        if (Math.abs(alloc1 + alloc2 + alloc3 - 100) > 0.01) return "MPF 分配比例總和必須等於 100%";
+
+        const percentages = ['genInf', 'medInf', 'mpfEmpRate', 'mpfEmrRate', 'secSellPercent', 'cashYield'];
+        for(let id of percentages) {
+            let val = parseFloat(document.getElementById(id).value);
+            if (val < 0 || val > 100) return "百分比欄位必須介於 0 至 100 之間";
+        }
+        
+        const amounts = ['oneTimeExp', 'genExp', 'medExp', 'totalSalary', 'baseSalary', 'initialCash', 'fdHkdP', 'fdUsdP'];
+        for(let id of amounts) {
+            let val = parseFloat(document.getElementById(id).value);
+            if (val < 0) return "金額欄位不得為負數";
+        }
+        return null;
+    }
+
+    // ==========================================
+    // 核心引擎 (修正負回報、動態變現、雙貨幣匯率)
+    // ==========================================
+    function runSimulation(isInit = false) {
+        let errorMsg = validateInputs();
+        if (errorMsg) {
+            if(!isInit) showToast("⚠️ 驗證錯誤: " + errorMsg, false);
+            return;
+        }
+
         const startAge = parseInt(document.getElementById('currentAge').value) || 39;
         const retireAge = parseInt(document.getElementById('retireAge').value) || 65;
         const lifeExp = parseInt(document.getElementById('lifeExpectancy').value) || 90;
         const oneTimeExp = parseFloat(document.getElementById('oneTimeExp').value) || 0;
+        
         const genInf = (parseFloat(document.getElementById('genInf').value) || 0) / 100;
         const medInf = (parseFloat(document.getElementById('medInf').value) || 0) / 100;
         
@@ -499,9 +522,11 @@
         const medExpMonth = parseFloat(document.getElementById('medExp').value) || 0;
         
         const initCash = parseFloat(document.getElementById('initialCash').value) || 0;
+        const cashYield = (parseFloat(document.getElementById('cashYield').value) || 0) / 100; // 新增現金池活期收益率
+        
         const secSellAge = parseInt(document.getElementById('secSellAge').value) || 65;
         const secSellPercent = (parseFloat(document.getElementById('secSellPercent').value) || 0) / 100;
-
+        
         const mpfEmpRate = (parseFloat(document.getElementById('mpfEmpRate').value) || 0) / 100;
         const mpfEmrRate = (parseFloat(document.getElementById('mpfEmrRate').value) || 0) / 100;
         const mpfFunds = [
@@ -512,9 +537,7 @@
 
         const initialFdHkdP = parseFloat(document.getElementById('fdHkdP').value) || 0;
         const fdHkd = { r: (parseFloat(document.getElementById('fdHkdR').value)||0)/100, m: parseInt(document.getElementById('fdHkdM').value)||6 };
-        
-        // 直接輸入美金金額
-        const initialFdUsdP = parseFloat(document.getElementById('fdUsdP').value) || 0; 
+        const initialFdUsdP = parseFloat(document.getElementById('fdUsdP').value) || 0;
         const fdUsd = { r: (parseFloat(document.getElementById('fdUsdR').value)||0)/100, m: parseInt(document.getElementById('fdUsdM').value)||3 };
 
         let secs = [];
@@ -526,14 +549,16 @@
                 pmt: parseFloat(document.getElementById(`secPmt_${i}`).value) || 0,
                 cagr: (parseFloat(document.getElementById(`secCagr_${i}`).value) || 0)/100,
                 div: (parseFloat(document.getElementById(`secDiv_${i}`).value) || 0)/100,
-                drip: document.getElementById(`secDrip_${i}`).checked
+                drip: document.getElementById(`secDrip_${i}`).checked,
+                currency: document.getElementById(`secCurr_${i}`).value
             });
         }
 
+        // 修改：匯率三情景聯動 (Base=固定7.83, Worst=每年+0.5%, Best=每年-0.5%)
         const scenariosList = [
-            { key: 'base', cagrMod: 0,  btcMod: 0 },
-            { key: 'worst', cagrMod: -0.06, btcMod: -0.12 },
-            { key: 'best', cagrMod: 0.03, btcMod: 0.06 }
+            { key: 'base', cagrMod: 0,  btcMod: 0, fxMod: 0 },
+            { key: 'worst', cagrMod: -0.06, btcMod: -0.12, fxMod: 0.005 },
+            { key: 'best', cagrMod: 0.03, btcMod: 0.06, fxMod: -0.005 }
         ];
 
         simulationResults.years = [];
@@ -543,9 +568,7 @@
             let cashPool = initCash;
             let retirementMainPool = 0; 
             let fdTotalHkdP = initialFdHkdP;
-            let fdTotalUsdP = initialFdUsdP; // 保持以美金原幣計價滾存
-            
-            let lockedAnnualSecExtractionHkd = -1; // -1 表示尚未鎖定基準
+            let fdTotalUsdP = initialFdUsdP;
             
             let myMpfFunds = JSON.parse(JSON.stringify(mpfFunds));
             let mySecs = JSON.parse(JSON.stringify(secs));
@@ -558,9 +581,12 @@
                 let yearIndex = age - startAge;
                 let genInfFactor = Math.pow(1 + genInf, yearIndex);
                 let medInfFactor = Math.pow(1 + medInf, yearIndex);
+                
+                // 計算當年度的 USD/HKD 匯率
+                let currentFx = 7.83 * Math.pow(1 + scene.fxMod, yearIndex);
 
                 // ==========================================
-                // 【A. 工作期累積階段】(Age < RetireAge)
+                // 【A. 工作期累積階段】
                 // ==========================================
                 if(age < retireAge) {
                     let yearSalaryBase = currBaseSal + (salInc * yearIndex);
@@ -568,61 +594,56 @@
                     let yearlyMpfEmp = 0, yearlyMpfEmr = 0;
 
                     for(let m=1; m<=12; m++) {
-                        let isBonus = (m===2 || m===9); // 雙薪特定月份
+                        let isBonus = (m===2 || m===9);
                         let mSalBase = isBonus ? yearSalaryBase * 2 : yearSalaryBase;
                         let mSalTot = isBonus ? yearSalaryTotal * 2 : yearSalaryTotal;
-                        
                         let empCont = isBonus ? 1500 : Math.min(mSalTot * mpfEmpRate, 1500);
                         let emrCont = isBonus ? 3000 : Math.min(mSalBase * mpfEmrRate, 3000);
-                        
                         yearlyMpfEmp += empCont;
                         yearlyMpfEmr += emrCont;
-
                         let monthGenExp = genExpMonth * genInfFactor;
                         let monthMedExp = (medExpMonth * medInfFactor) + (initialVhis * getVhisMultiplier(age) * medInfFactor);
                         let secPmtTot = mySecs.reduce((sum, s) => sum + s.pmt, 0);
-                        
                         cashPool += (mSalTot - empCont - monthGenExp - monthMedExp - secPmtTot);
                     }
 
-                    // 強積金複利增長
                     let totalMpfCont = yearlyMpfEmp + yearlyMpfEmr;
                     myMpfFunds.forEach(f => {
-                        let actualCagr = Math.max(0, f.cagr + scene.cagrMod);
+                        let actualCagr = f.cagr + scene.cagrMod; // 允許 MPF 負回報
                         f.bal = f.bal * (1 + actualCagr) + (totalMpfCont * f.alloc);
                     });
 
-                    // 證券定期定額購入
                     mySecs.forEach(s => {
-                        let actualCagr = s.code === 'BTC' ? Math.max(0, s.cagr + scene.btcMod) : Math.max(0, s.cagr + scene.cagrMod);
-                        let yearPmt = s.pmt * 12;
-                        if(s.price > 0) s.qty += (yearPmt / s.price);
-                        s.price = s.price * (1 + actualCagr);
+                        let actualCagr = s.code === 'BTC' ? (s.cagr + scene.btcMod) : (s.cagr + scene.cagrMod); // 允許股票/Crypto 負回報
+                        let yearPmtHkd = s.pmt * 12;
+                        let localFx = s.currency === 'USD' ? currentFx : 1;
                         
-                        let dividendVal = s.qty * s.price * s.div;
+                        if(s.price > 0) s.qty += ((yearPmtHkd / localFx) / s.price);
+                        
+                        s.price = s.price * (1 + actualCagr);
+                        s.price = Math.max(0.0001, s.price); // 保底價避免系統崩潰，但允許極度逼近 0
+
+                        let dividendValHkd = s.qty * s.price * s.div * localFx;
                         if(s.drip && s.price > 0) {
-                            s.qty += dividendVal / s.price;
+                            let dividendValOrig = s.qty * s.price * s.div;
+                            s.qty += dividendValOrig / s.price;
                         } else {
-                            cashPool += dividendVal;
+                            cashPool += dividendValHkd;
                         }
                     });
 
-                    // 定存原幣無縫自動滾存
                     fdTotalHkdP = fdTotalHkdP * Math.pow(1 + fdHkd.r * (fdHkd.m/12), 12/fdHkd.m);
                     fdTotalUsdP = fdTotalUsdP * Math.pow(1 + fdUsd.r * (fdUsd.m/12), 12/fdUsd.m);
 
                 // ==========================================
-                // 【B. 抵達退休年齡瞬間】(Age == RetireAge)
+                // 【B. 抵達退休年齡】
                 // ==========================================
                 } else if (age === retireAge) {
                     let totalMpfCash = myMpfFunds.reduce((sum, f) => sum + f.bal, 0);
                     retirementMainPool = totalMpfCash;
                     myMpfFunds.forEach(f => f.bal = 0); 
-                    
-                    // 退休當年立刻強制關閉往後的定投供款
                     mySecs.forEach(s => s.pmt = 0);
 
-                    // 扣減大額一次性開支 (優先扣減退休大池，不足再扣現金池)
                     let oneTimeExpInf = oneTimeExp * genInfFactor;
                     if(retirementMainPool >= oneTimeExpInf) {
                         retirementMainPool -= oneTimeExpInf;
@@ -634,52 +655,33 @@
                 } 
                 
                 // ==========================================
-                // 【C. 退休後的優化提款與動態瀑布流】(Age >= RetireAge)
+                // 【C. 退休後期】
                 // ==========================================
                 if (age >= retireAge) {
-                    // 退休期一律強制不再月供
                     mySecs.forEach(s => s.pmt = 0);
-
                     let yearlyGenExp = genExpMonth * 12 * genInfFactor;
                     let yearlyMedExp = (medExpMonth * 12 * medInfFactor) + (initialVhis * 12 * getVhisMultiplier(age) * medInfFactor);
                     let totalYearlyNeeds = yearlyGenExp + yearlyMedExp;
 
-                    // 1. 【自訂定額出售證券注入】
+                    // 修改：每年基於當前剩餘市值乘以出售比例 (動態出售)
                     if(age >= secSellAge) {
-                        if(lockedAnnualSecExtractionHkd === -1) {
-                            let totalSecMarketValueHkd = mySecs.reduce((sum, s) => sum + (s.qty * s.price), 0);
-                            lockedAnnualSecExtractionHkd = totalSecMarketValueHkd * secSellPercent;
-                        }
-                        
-                        let targetExtract = lockedAnnualSecExtractionHkd;
                         for(let s of mySecs) {
-                            if(targetExtract <= 0) break;
-                            let currentSecVal = s.qty * s.price;
-                            if(currentSecVal > 0) {
-                                if(currentSecVal >= targetExtract) {
-                                    s.qty -= (targetExtract / s.price);
-                                    cashPool += targetExtract;
-                                    targetExtract = 0;
-                                } else {
-                                    cashPool += currentSecVal;
-                                    targetExtract -= currentSecVal;
-                                    s.qty = 0;
-                                }
+                            let qtyToSell = s.qty * secSellPercent;
+                            if(qtyToSell > 0) {
+                                let localFx = s.currency === 'USD' ? currentFx : 1;
+                                let sellValHkd = qtyToSell * s.price * localFx;
+                                s.qty -= qtyToSell;
+                                cashPool += sellValHkd;
                             }
-                            s.qty = Math.max(0, s.qty);
                         }
                     }
 
-                    // 2. 【動態瀑布流扣消判定】
                     let liquidFunds = cashPool + retirementMainPool;
-                    
-                    // 當前定存能產生的當年度名義利息
                     let fdHkdInterest = fdTotalHkdP * fdHkd.r;
-                    let fdUsdInterest = (fdTotalUsdP * fdUsd.r) * FX_USD_HKD; // 換算成港幣
+                    let fdUsdInterest = (fdTotalUsdP * fdUsd.r) * currentFx; // 套用當年匯率
                     let totalFdInterestHkd = fdHkdInterest + fdUsdInterest;
 
                     if (liquidFunds >= totalYearlyNeeds) {
-                        // 第一階段：流動資金充足，定存利息與本金完全不動用，100% 繼續原幣滾存
                         if(retirementMainPool >= totalYearlyNeeds) {
                             retirementMainPool -= totalYearlyNeeds;
                         } else {
@@ -687,63 +689,62 @@
                             retirementMainPool = 0;
                             cashPool -= remain;
                         }
-                        // 利息重新滾入本金
                         fdTotalHkdP += fdHkdInterest;
                         fdTotalUsdP += (fdTotalUsdP * fdUsd.r); 
                     } else {
-                        // 流動資金不足支付當前總支出，耗盡所有流動資金
                         let shortfall = totalYearlyNeeds - liquidFunds;
                         cashPool = 0;
                         retirementMainPool = 0;
 
                         if (totalFdInterestHkd >= shortfall) {
-                            // 第二階段：利息足夠補缺口，動態提取部分利息，剩餘利息照樣滾入本金
                             let leftoverInterestHkd = totalFdInterestHkd - shortfall;
-                            // 按比例將剩餘利息配回原定存池
                             let keepRatio = totalFdInterestHkd > 0 ? (leftoverInterestHkd / totalFdInterestHkd) : 0;
                             fdTotalHkdP += (fdHkdInterest * keepRatio);
                             fdTotalUsdP += (fdTotalUsdP * fdUsd.r * keepRatio);
                         } else {
-                            // 第三階段：連利息都不夠補，利息全部被全額榨乾 (keepRatio = 0)
                             shortfall -= totalFdInterestHkd;
-                            
-                            // 開始動用定存本金
-                            let totalFdPrincipalHkd = fdTotalHkdP + (fdTotalUsdP * FX_USD_HKD);
+                            let totalFdPrincipalHkd = fdTotalHkdP + (fdTotalUsdP * currentFx);
                             if (totalFdPrincipalHkd >= shortfall) {
                                 let portionHkd = fdTotalHkdP / (totalFdPrincipalHkd || 1);
-                                let portionUsd = (fdTotalUsdP * FX_USD_HKD) / (totalFdPrincipalHkd || 1);
-                                
+                                let portionUsd = (fdTotalUsdP * currentFx) / (totalFdPrincipalHkd || 1);
                                 fdTotalHkdP -= (shortfall * portionHkd);
-                                fdTotalUsdP -= ((shortfall * portionUsd) / FX_USD_HKD);
+                                fdTotalUsdP -= ((shortfall * portionUsd) / currentFx); // 扣回原幣
                             } else {
-                                // 如果定存本金也耗盡
                                 fdTotalHkdP = 0;
                                 fdTotalUsdP = 0;
                             }
                         }
                     }
 
-                    // 證券價格隨年CAGR增長，且退休後股息一律直接進入現金池以提供流動性
                     mySecs.forEach(s => {
-                        let actualCagr = s.code === 'BTC' ? Math.max(0, s.cagr + scene.btcMod) : Math.max(0, s.cagr + scene.cagrMod);
+                        let actualCagr = s.code === 'BTC' ? (s.cagr + scene.btcMod) : (s.cagr + scene.cagrMod);
                         s.price = s.price * (1 + actualCagr);
-                        let dividendVal = s.qty * s.price * s.div;
-                        cashPool += dividendVal; 
+                        s.price = Math.max(0.0001, s.price);
+                        
+                        let localFx = s.currency === 'USD' ? currentFx : 1;
+                        let dividendValHkd = s.qty * s.price * s.div * localFx;
+                        cashPool += dividendValHkd; 
                     });
                 }
 
                 // ==========================================
-                // 【D. 嚴密下限保底控制與年度加總】
+                // 【D. 年度總結與現金收益結算】
                 // ==========================================
                 cashPool = Math.max(0, cashPool);
+                cashPool *= (1 + cashYield); // 加入現金池活期收益率
+
                 retirementMainPool = Math.max(0, retirementMainPool);
                 fdTotalHkdP = Math.max(0, fdTotalHkdP);
                 fdTotalUsdP = Math.max(0, fdTotalUsdP);
-
-                let secTotal = mySecs.reduce((sum, s) => sum + (Math.max(0, s.qty) * s.price), 0);
+                
+                let secTotalHkd = mySecs.reduce((sum, s) => {
+                    let localFx = s.currency === 'USD' ? currentFx : 1;
+                    return sum + (Math.max(0, s.qty) * s.price * localFx);
+                }, 0);
+                
                 let mpfTotal = age < retireAge ? myMpfFunds.reduce((sum, f) => sum + Math.max(0, f.bal), 0) : 0;
                 
-                let nominalTotal = cashPool + retirementMainPool + fdTotalHkdP + (fdTotalUsdP * FX_USD_HKD) + secTotal + mpfTotal;
+                let nominalTotal = cashPool + retirementMainPool + fdTotalHkdP + (fdTotalUsdP * currentFx) + secTotalHkd + mpfTotal;
                 let realTotal = nominalTotal / genInfFactor;
 
                 simulationResults.scenarios[scene.key].nominal.push(nominalTotal);
@@ -771,7 +772,6 @@
                 }
             }
         });
-        
         updateUI();
     }
 
@@ -804,7 +804,6 @@
             document.getElementById('stat-end-best').innerText = formatCurr(simulationResults.scenarios.best.nominal[simulationResults.scenarios.best.nominal.length-1]);
         }
 
-        // Die with Zero 提點判定 (資產充裕時提醒適度享用)
         const alertBox = document.getElementById('dieWithZeroAlert');
         const alertMsg = document.getElementById('alertMessage');
         if(ed.real > 1500000) {
@@ -832,7 +831,7 @@
         let idx = ageInput - startAge;
         if(idx >= 0 && idx < simulationResults.scenarios.base.cashPool.length) {
             let val = simulationResults.scenarios.base.cashPool[idx];
-            res.innerText = `👉 在中位數情境下， ${ageInput} 歲時的流動現金池餘額為：${formatCurr(val)}`;
+            res.innerText = `👉 在基準情景下， ${ageInput} 歲時的流動現金池餘額為：${formatCurr(val)}`;
         } else {
             res.innerText = "⚠️ 請輸入有效的模擬區間年齡";
         }
@@ -848,15 +847,14 @@
         const dataBest = isReal ? simulationResults.scenarios.best.real : simulationResults.scenarios.best.nominal;
         
         if(chartInstance) chartInstance.destroy();
-
         chartInstance = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: labels,
                 datasets: [
-                    { label: '大繁榮情境 (90% 分位線)', data: dataBest, borderColor: '#10b981', backgroundColor: 'transparent', borderDash: [4, 4], pointRadius: 0, borderWidth: 1.5 },
-                    { label: '中位數常態情境 (50% 分位線)', data: dataBase, borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.06)', fill: true, pointRadius: 1, borderWidth: 3 },
-                    { label: '大衰退情境 (10% 安全防線)', data: dataWorst, borderColor: '#ef4444', backgroundColor: 'transparent', pointRadius: 0, borderWidth: 1.5 }
+                    { label: '樂觀情景', data: dataBest, borderColor: '#10b981', backgroundColor: 'transparent', borderDash: [4, 4], pointRadius: 0, borderWidth: 1.5 },
+                    { label: '基準情景', data: dataBase, borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.06)', fill: true, pointRadius: 1, borderWidth: 3 },
+                    { label: '悲觀情景', data: dataWorst, borderColor: '#ef4444', backgroundColor: 'transparent', pointRadius: 0, borderWidth: 1.5 }
                 ]
             },
             options: {
@@ -910,7 +908,7 @@
             supaConnected = false;
             supabaseClient = null;
             setSyncStatus('offline');
-            showToast("⚠️ 欄位留空，切換回純本地模式");
+            showToast("⚠️ 欄位留空，切換回純本地模式", false);
             return;
         }
         
@@ -918,7 +916,6 @@
             setSyncStatus('loading', '正在連線...');
             supabaseClient = supabase.createClient(url, key);
             
-            // 嘗試讀取（若無表會拋出異常，用以就地驗證憑證合法性）
             const { error } = await supabaseClient.from('lifecycle_plan').select('id').limit(1);
             if (error && error.code !== 'PGRST116') throw error; 
             
@@ -926,19 +923,19 @@
             localStorage.setItem('supaKey', key);
             supaConnected = true;
             setSyncStatus('ok');
-            showToast("⚡ Supabase 雲端對接成功");
+            showToast("⚡ Supabase 雲端對接成功", true);
             await loadFromSupabase();
         } catch(e) {
             supaConnected = false;
             supabaseClient = null;
             setSyncStatus('error', '連線失敗: 金鑰錯誤');
-            showToast("❌ 連線失敗，請檢查凭证是否正確");
+            showToast("❌ 連線失敗，請檢查凭证是否正確", false);
         }
     }
 
     function packState() {
         const fields = ['currentAge','retireAge','lifeExpectancy','oneTimeExp','genInf','medInf','genExp','medExp',
-                        'totalSalary','baseSalary','salaryInc','vhisPremium','initialCash','viewAgeCash',
+                        'totalSalary','baseSalary','salaryInc','vhisPremium','initialCash','cashYield','viewAgeCash',
                         'mpfEmpRate','mpfEmrRate','mpfBal1','mpfAlloc1','mpfCagr1','mpfBal2','mpfAlloc2','mpfCagr2',
                         'mpfBal3','mpfAlloc3','mpfCagr3','fdHkdP','fdHkdR','fdHkdM','fdUsdP','fdUsdR','fdUsdM',
                         'secSellAge', 'secSellPercent'];
@@ -947,7 +944,6 @@
             const el = document.getElementById(f);
             if(el) state[f] = el.value;
         });
-        
         state.stocks = [];
         for(let i=0; i<defaultSecurities.length; i++) {
             state.stocks.push({
@@ -956,7 +952,8 @@
                 pmt: document.getElementById(`secPmt_${i}`).value,
                 cagr: document.getElementById(`secCagr_${i}`).value,
                 div: document.getElementById(`secDiv_${i}`).value,
-                drip: document.getElementById(`secDrip_${i}`).checked
+                drip: document.getElementById(`secDrip_${i}`).checked,
+                currency: document.getElementById(`secCurr_${i}`).value
             });
         }
         return state;
@@ -978,6 +975,9 @@
                     document.getElementById(`secCagr_${i}`).value = stk.cagr;
                     document.getElementById(`secDiv_${i}`).value = stk.div;
                     document.getElementById(`secDrip_${i}`).checked = stk.drip;
+                    if(stk.currency && document.getElementById(`secCurr_${i}`)) {
+                        document.getElementById(`secCurr_${i}`).value = stk.currency;
+                    }
                 }
             });
         }
@@ -990,35 +990,43 @@
             if (error) throw error;
             if (data && data.length > 0) {
                 unpackState(data[0].payload);
-                runSimulation();
+                runSimulation(true);
             }
         } catch(e) {
             console.warn("雲端無歷史配置，保留現有設定值", e);
         }
     }
 
-    function showToast(msg) {
+    function showToast(msg, isSuccess = true) {
         const t = document.getElementById('toast');
         t.innerText = msg;
+        if(isSuccess) t.classList.add('success');
+        else t.classList.remove('success');
+        
         t.classList.add('show');
         setTimeout(() => t.classList.remove('show'), 2500);
     }
 
     async function onFabClick() {
-        runSimulation(); 
+        if (validateInputs()) {
+            runSimulation(false); // 觸發失敗 Toast
+            return;
+        }
+        runSimulation(false);
         const stateObj = packState();
         localStorage.setItem('local_retirement_params', JSON.stringify(stateObj));
 
         if (supaConnected && supabaseClient) {
             try {
-                const { error } = await supabaseClient.from('lifecycle_plan').insert([{ payload: stateObj }]);
+                // 修改：使用 upsert 來保持只留存最新一筆覆蓋資料 (假設單用戶綁定 id:1)
+                const { error } = await supabaseClient.from('lifecycle_plan').upsert([{ id: 1, payload: stateObj }], { onConflict: 'id' });
                 if(error) throw error;
-                showToast("✔ 精算完成且已上傳雲端");
+                showToast("✔ 精算完成且已上傳雲端", true);
             } catch(e) {
-                showToast("⚠️ 精算成功，但雲端同步失敗");
+                showToast("⚠️ 精算成功，但雲端同步失敗", false);
             }
         } else {
-            showToast("✔ 精算完成，已安全存至本地");
+            showToast("✔ 精算完成，已安全存至本地", true);
         }
         
         if(!document.getElementById('tab-details').classList.contains('hidden')) {
@@ -1029,8 +1037,6 @@
 
     window.onload = function() {
         initUI();
-        
-        // 如果本地存有金鑰，啟動時在背景自動嘗試握手連線
         const cachedUrl = localStorage.getItem('supaUrl');
         const cachedKey = localStorage.getItem('supaKey');
         if(cachedUrl && cachedKey) {
@@ -1042,14 +1048,14 @@
                     loadFromSupabase();
                 } else {
                     setSyncStatus('error', '金鑰失效，改為本地模式');
-                    runSimulation();
+                    runSimulation(true);
                 }
             }).catch(() => {
                 setSyncStatus('error', '連線異常');
-                runSimulation();
+                runSimulation(true);
             });
         } else {
-            runSimulation();
+            runSimulation(true);
         }
     };
 </script>
